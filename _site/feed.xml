@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>DLockamy&#39;s House of Bits</title>
+    <description>A collection of my current programming projects that tend to focus on web services and experimental OS concepts. 
+</description>
+    <link>http://dlockamy.com/</link>
+    <atom:link href="http://dlockamy.com/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Sun, 04 Sep 2016 21:59:01 -0400</pubDate>
+    <lastBuildDate>Sun, 04 Sep 2016 21:59:01 -0400</lastBuildDate>
+    <generator>Jekyll v3.0.1</generator>
+    
+      <item>
+        <title>Howdie World</title>
+        <description>&lt;p&gt;Hello World&lt;/p&gt;
+</description>
+        <pubDate>Sun, 04 Sep 2016 21:31:00 -0400</pubDate>
+        <link>http://dlockamy.com/jekyll/update/2016/09/04/hello-world.html</link>
+        <guid isPermaLink="true">http://dlockamy.com/jekyll/update/2016/09/04/hello-world.html</guid>
+        
+        
+        <category>jekyll</category>
+        
+        <category>update</category>
+        
+      </item>
+    
+  </channel>
+</rss>
