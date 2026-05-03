@@ -58,26 +58,6 @@
 		<div class="container">
 		<div class="top-widget-container">
 			<div class="top-widget-grid">
-				<div class="widget_text top-widgets-wrapper"><div class="textwidget custom-html-widget"><a href="https://twitter.com/fuciferdesign">
-<svg height="128" width="128" viewBox="328 355 335 276" xmlns="http://www.w3.org/2000/svg">
-  <path d="
-    M 630, 425
-    A 195, 195 0 0 1 331, 600
-    A 142, 142 0 0 0 428, 570
-    A  70,  70 0 0 1 370, 523
-    A  70,  70 0 0 0 401, 521
-    A  70,  70 0 0 1 344, 455
-    A  70,  70 0 0 0 372, 460
-    A  70,  70 0 0 1 354, 370
-    A 195, 195 0 0 0 495, 442
-    A  67,  67 0 0 1 611, 380
-    A 117, 117 0 0 0 654, 363
-    A  65,  65 0 0 1 623, 401
-    A 117, 117 0 0 0 662, 390
-    A  65,  65 0 0 1 630, 425
-    Z" style="fill:#3BA9EE;"></path>
-</svg></a></div></div>			</div>
-			<div class="top-widget-grid">
 				<div class="widget_text top-widgets-wrapper"><div class="textwidget custom-html-widget"><a href="https://www.linkedin.com/in/douglas-lockamy-49097b33/"><svg height="128" width="128" viewBox="0 50 512 512">
         <path fill="#828282" d="M150.65,100.682c0,27.992-22.508,50.683-50.273,50.683c-27.765,0-50.273-22.691-50.273-50.683
         C50.104,72.691,72.612,50,100.377,50C128.143,50,150.65,72.691,150.65,100.682z M143.294,187.333H58.277V462h85.017V187.333z
@@ -97,14 +77,26 @@
 				</header><!-- .entry-header -->
 
 				<div class="entry-content">
-				</div><!-- .entry-content -->	
+				{% assign latest = site.posts.first %}
+				{% if latest %}
+				<div style="margin: 40px 0; padding: 30px; border-left: 4px solid #2a7ae2; background: #f8f8f8;">
+					<p style="margin: 0 0 8px; font-size: 13px; color: #828282; text-transform: uppercase; letter-spacing: 0.5px;">Latest Post</p>
+					<p style="margin: 0 0 6px; font-size: 13px; color: #828282;">{{ latest.date | date: "%b %-d, %Y" }}</p>
+					<h2 style="margin: 0 0 12px; font-size: 22px; font-weight: 600;">
+						<a href="{{ latest.url }}" style="color: #111; text-decoration: none;">{{ latest.title }}</a>
+					</h2>
+					<p style="margin: 0 0 16px; color: #555; line-height: 1.6;">{{ latest.excerpt | strip_html | truncatewords: 40 }}</p>
+					<a href="{{ latest.url }}" style="color: #2a7ae2; font-size: 14px; text-decoration: none; font-weight: 500;">Read more &rarr;</a>
+				</div>
+				{% endif %}
+				</div><!-- .entry-content -->
 			</article><!-- #post-## -->
 		</main><!-- #main -->	
 	</div><!-- #primary -->
 </div><!-- #content -->
 <footer id="colophon" class="site-footer" role="contentinfo">
 	<div class="site-info">
-		<div class="container">© 2017 dlockamy</div>
+		<div class="container">© {{ site.time | date: "%Y" }} dlockamy</div>
 	</div>
 </footer>
 </div>
