@@ -4,26 +4,21 @@ title: Blog
 permalink: /blog/
 ---
 
-<div class="home">
+<div class="archive">
+  <div class="section-header">
+    <span class="section-label">TRANSMISSION LOG</span>
+    <div class="section-line"></div>
+  </div>
 
-  <h1 class="page-heading">Posts</h1>
-
-  <ul class="post-list">
+  <ul class="archive__list">
     {% for post in site.posts %}
-      <li>
-        <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}{% if post.ai_generated %} · <span class="ai-badge">AI</span>{% endif %}</span>
-
-        <h2>
-          <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
-        </h2>
-
-        {% if post.excerpt %}
-          <p class="post-excerpt">{{ post.excerpt | strip_html | truncatewords: 30 }}</p>
-        {% endif %}
-      </li>
+    <li class="archive__item">
+      <span class="archive__date">{{ post.date | date: "%Y.%m.%d" }}</span>
+      <span class="archive__title"><a href="{{ post.url | relative_url }}">{{ post.title }}</a></span>
+      {% if post.ai_generated %}<span class="archive__ai-badge">AI</span>{% endif %}
+    </li>
     {% endfor %}
   </ul>
 
-  <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p>
-
+  <p class="archive__rss">subscribe <a href="{{ '/feed.xml' | relative_url }}">via RSS</a></p>
 </div>

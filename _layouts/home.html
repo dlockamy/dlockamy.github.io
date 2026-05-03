@@ -1,91 +1,183 @@
-<!DOCTYPE html>
-<html lang="en-US"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="profile" href="http://gmpg.org/xfn/11">
-	<title>dlockamy – My God, It's Full of Bits…..</title>
+---
+layout: default
+---
 
-<link rel="stylesheet" id="businessbuilder-style-css" href="./css/style.css" type="text/css" media="all">
+<!-- HERO -->
+<section class="hero">
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
 
-<style type="text/css">
-    header#masthead { background-color: #000000; }
-    .site-title{ color: #000000; }
-    p.site-description:before{ background: #000000; }
-    p.site-description{ color: #000000; }
-</style>
+  <div class="hero__eyebrow">OPERATOR: D. LOCKAMY // SYSTEM ONLINE // CARY, NC</div>
+  <h1 class="hero__title">Douglas<br><span>Lockamy</span></h1>
+  <p class="hero__tagline">{{ site.tagline }}</p>
 
-<meta name="description" content="My God, It&#39;s Full of Bits.....">
+  <div class="hero__meta">
+    <div class="meta-item">
+      <span class="meta-label">Designation</span>
+      <span class="meta-value">ENGINEER</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Status</span>
+      <span class="meta-value">ONLINE</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Projects</span>
+      <span class="meta-value" id="repo-count">---</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Base</span>
+      <span class="meta-value">CARY NC</span>
+    </div>
+  </div>
+</section>
 
-<style type="text/css" id="businessbuilder-header-css">
-	header#masthead {
-		background-image: url(images/photo-330771.jpeg);
-	}		
-</style>
-</head>
+<!-- MISSION CONSOLE -->
+<section class="console-section">
+  <div class="section-header">
+    <span class="section-label">MISSION CONSOLE</span>
+    <div class="section-line"></div>
+    <span class="section-sub">ACTIVE PROJECTS</span>
+  </div>
 
-<body class="home page-template-default page page-id-62">
-	<div id="page" class="site">
-		<a class="skip-link screen-reader-text" href="https://dlockamy.com/#content">Skip to content</a>
-		<header id="masthead" class="site-header" role="banner">
-						<div class="site-branding container">
-								<a href="https://dlockamy.com/">
-					<span class="site-title">
-						dlockamy					</span>
-				</a>
-				<p class="site-description">
-					My God, It's Full of Bits…..				</p>
-			</div>
-		
-<nav id="site-navigation" class="main-navigation" role="navigation">
-	<div class="top-nav container">
-		<button class="menu-toggle" aria-controls="primary-menu" aria-expanded="false" style="display: none;">
-			<span class="m_menu_icon"></span>
-			<span class="m_menu_icon"></span>
-			<span class="m_menu_icon"></span>
-		</button>
-		<div class="mobile-site-name">
-			<a href="https://dlockamy.com/">
-				dlockamy			</a>
-		</div>
-		<div class="menu-wrapper">
-			<ul id="primary-menu" class="menu nav-menu">
-				<li class="menu-item"><a href="/blog/">Blog</a></li>
-				<li class="menu-item"><a href="/connect/">Connect</a></li>
-				<li class="menu-item"><a href="/about/">About</a></li>
-			</ul>
-		</div>
-	</div>
-</nav><!-- #site-navigation -->
-</header><!-- #masthead -->
-<div id="content" class="site-content">
-	<div id="primary" class="content-area container">
-		<main id="main" class="site-main full-width" role="main">		
-			<article id="post-62" class="post-62 page type-page status-publish hentry">
-				<header class="entry-header">
-				</header><!-- .entry-header -->
+  <div class="console-bar">
+    <div class="side-indicator"></div>
+    <div class="ibm-bar">LOCKAMY STUDIOS — MISSION CONTROL — SYSTEM v2.0</div>
+    <div class="side-indicator"></div>
+  </div>
 
-				<div class="entry-content">
-				{% assign latest = site.posts.first %}
-				{% if latest %}
-				<div style="margin: 40px 0; padding: 30px; border-left: 4px solid #2a7ae2; background: #f8f8f8;">
-					<p style="margin: 0 0 8px; font-size: 13px; color: #828282; text-transform: uppercase; letter-spacing: 0.5px;">Latest Post</p>
-					<p style="margin: 0 0 6px; font-size: 13px; color: #828282;">{{ latest.date | date: "%b %-d, %Y" }}</p>
-					<h2 style="margin: 0 0 12px; font-size: 22px; font-weight: 600;">
-						<a href="{{ latest.url }}" style="color: #111; text-decoration: none;">{{ latest.title }}</a>
-					</h2>
-					<p style="margin: 0 0 16px; color: #555; line-height: 1.6;">{{ latest.excerpt | strip_html | truncatewords: 40 }}</p>
-					<a href="{{ latest.url }}" style="color: #2a7ae2; font-size: 14px; text-decoration: none; font-weight: 500;">Read more &rarr;</a>
-				</div>
-				{% endif %}
-				</div><!-- .entry-content -->
-			</article><!-- #post-## -->
-		</main><!-- #main -->	
-	</div><!-- #primary -->
-</div><!-- #content -->
-<footer id="colophon" class="site-footer" role="contentinfo">
-	<div class="site-info">
-		<div class="container">© {{ site.time | date: "%Y" }} dlockamy</div>
-	</div>
-</footer>
-</div>
-</body>
-</html>
+  <div class="three-panel">
+    <!-- Panel 1: OS & Systems -->
+    <div class="panel">
+      <div class="panel__lights">
+        <div class="light light-teal"></div>
+        <div class="light light-teal"></div>
+        <div class="light light-red"></div>
+      </div>
+      <div class="panel__title">// OS &amp; SYSTEMS</div>
+      {% for project in site.data.projects %}
+        {% if project.category == "systems" %}
+        <div class="project-entry">
+          <div class="project-entry__name">{{ project.name }}</div>
+          <div class="project-entry__lang">{{ project.stack }}</div>
+        </div>
+        {% endif %}
+      {% endfor %}
+      <div class="waveform">
+        <svg viewBox="0 0 200 28" preserveAspectRatio="none">
+          <polyline points="0,14 10,7 20,21 30,9 40,17 50,5 60,19 70,11 80,23 90,7 100,15 110,4 120,19 130,13 140,24 150,8 160,16 170,6 180,20 190,10 200,14" fill="none" stroke="#00e5cc" stroke-width="1.5"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Panel 2: Web & Community -->
+    <div class="panel">
+      <div class="panel__lights">
+        <div class="light light-teal"></div>
+        <div class="light light-amber"></div>
+        <div class="light light-teal"></div>
+      </div>
+      <div class="panel__title">// WEB &amp; COMMUNITY</div>
+      {% for project in site.data.projects %}
+        {% if project.category == "web" %}
+        <div class="project-entry">
+          <div class="project-entry__name">{{ project.name }}</div>
+          <div class="project-entry__lang">{{ project.stack }}</div>
+        </div>
+        {% endif %}
+      {% endfor %}
+      <div class="waveform">
+        <svg viewBox="0 0 200 28" preserveAspectRatio="none">
+          <polyline points="0,19 10,13 20,7 30,17 40,4 50,21 60,9 70,16 80,6 90,22 100,11 110,18 120,5 130,15 140,23 150,9 160,17 170,7 180,19 190,12 200,19" fill="none" stroke="#00e5cc" stroke-width="1.5"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Panel 3: System Readout -->
+    <div class="panel">
+      <div class="panel__lights">
+        <div class="light light-red"></div>
+        <div class="light light-teal"></div>
+        <div class="light light-teal"></div>
+      </div>
+      <div class="panel__title">// SYSTEM READOUT</div>
+      {% for item in site.data.readout %}
+      <div class="readout-line {% if item.status == 'red' %}readout-line--red{% elsif item.status == 'amber' %}readout-line--amber{% elsif item.status == 'green' %}readout-line--green{% endif %}">
+        <span class="readout-line__key">{{ item.key }}</span>
+        <span class="readout-line__val">{{ item.value }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Lights row below panels -->
+  <div class="lights-row">
+    <div class="lights-cell">
+      <div class="light light-teal light-big"></div>
+      <div class="light light-teal light-big" style="animation-delay:0.3s"></div>
+      <div class="light-bar"></div>
+    </div>
+    <div class="lights-cell">
+      <div class="light light-teal light-big"></div>
+      <div class="light light-amber light-big" style="animation-delay:0.4s"></div>
+      <div class="light-bar"></div>
+    </div>
+    <div class="lights-cell">
+      <div class="light light-teal light-big"></div>
+      <div class="light light-teal light-big" style="animation-delay:0.6s"></div>
+      <div class="light-bar"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT + SKILLS -->
+<section class="about-section">
+  <div>
+    <div class="section-header">
+      <span class="section-label">OPERATOR PROFILE</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="about-bio">
+      {{ content }}
+    </div>
+    <div class="terminal">
+      <div class="terminal__header">// RECENT COMMITS</div>
+      <div class="terminal__output" id="commit-log">
+        <div><span class="terminal__comment"># git log --oneline --all</span></div>
+        <div><span class="terminal__cmd">loading</span> fetching from github...</div>
+        <div><span class="terminal__comment">$ _</span><span class="cursor-blink"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-header">
+      <span class="section-label">SYSTEM SPECS</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="skills-panel">
+      {% for skill in site.data.skills %}
+      <div class="skill-row">
+        <div class="skill-header">
+          <span>{{ skill.name }}</span>
+          <span class="text-teal">{{ skill.level }}%</span>
+        </div>
+        <div class="skill-bar-bg">
+          <div class="skill-bar-fill" style="width:{{ skill.level }}%"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="uplink-panel" id="uplink">
+      <div class="sub-header">// UPLINK</div>
+      {% for link in site.data.links %}
+      <div class="readout-line">
+        <span class="readout-line__key">{{ link.label }}</span>
+        <span class="readout-line__val"><a href="{{ link.url }}">{{ link.display }}</a></span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>

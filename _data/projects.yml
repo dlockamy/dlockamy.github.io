@@ -1,0 +1,62 @@
+- name: bitchain
+  category: systems
+  stack: "Rust / Binary Asset Versioning"
+  domain: github.com/dlockamy/bitchain
+  status: active
+  description: "Content-addressed binary asset versioning. Splits files into SHA-256 hashed blocks with JSON manifests — version your assets like your code."
+
+- name: BenixOS
+  category: systems
+  stack: "C / Yocto / Interactive UI Layer"
+  domain: benixos.com
+  status: active
+  description: "Modern embedded OS framework inspired by BeOS kit/service architecture. Built on Yocto + Linux kernel."
+
+- name: DeviceNix
+  category: systems
+  stack: "C / Yocto / Headless Core OS"
+  domain: devicenix.com
+  status: active
+  description: "Core OS layer following Darwin model. Provides OS Kit, Message Kit, and Registry Service."
+
+- name: Thunderhead
+  category: systems
+  stack: "Hardware / Edge Compute Server"
+  domain: thunderhead.systems
+  status: planning
+  description: "Consumer-friendly personal edge compute server. Bring the cloud home."
+
+- name: ClusterZer0
+  category: systems
+  stack: "Terraform / JSON / IaC"
+  domain: clusterzer0.com
+  status: planning
+  description: "Declarative JSON format for infrastructure state, deployed via opinionated Terraform modules."
+
+- name: Legitimate Salvage
+  category: web
+  stack: "React / Collectibles Marketplace"
+  domain: legitimatesalvage.com
+  status: planning
+  description: "Community buy/sell/trade marketplace for collectibles organized by fandom and brand."
+
+- name: Physical Components
+  category: web
+  stack: "React / Music & Film Market"
+  domain: physicalcomponents.com
+  status: planning
+  description: "Music and film collectibles marketplace. Named after NIN's physical companion releases."
+
+- name: QuickRing
+  category: web
+  stack: "Node / QR Studio / Pub-Sub"
+  domain: quickring.me
+  status: planning
+  description: "QR code generation, hosting, and analytics platform with merch studio and binding service."
+
+- name: SlashBuilder
+  category: web
+  stack: "Wiki + Aggregator / DevOps"
+  domain: slashbuilder.com
+  status: planning
+  description: "Community portal for DevOps engineers — part documentation wiki, part news aggregator."
