@@ -194,6 +194,25 @@
     font-size: 24px;
 }
 
+.post-excerpt {
+    color: $grey-color;
+    font-size: $small-font-size;
+    margin-top: 4px;
+}
+
+.ai-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    color: $background-color;
+    background-color: $grey-color;
+    border-radius: 3px;
+    padding: 1px 5px;
+    vertical-align: middle;
+    text-transform: uppercase;
+}
+
 
 
 /**
