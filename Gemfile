@@ -1,6 +1,7 @@
 source "https://rubygems.org"
 
-gem "jekyll", "~> 4.3.2"
+gem "jekyll", "~> 4.3"
+gem "addressable", ">= 2.8.7"
 
 group :jekyll_plugins do
   gem "jekyll-feed", "~> 0.12"
