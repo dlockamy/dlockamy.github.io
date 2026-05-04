@@ -1,0 +1,55 @@
+title: "Douglas Lockamy"
+tagline: "My god, it's full of bits..."
+description: "Systems engineer, maker, and builder. Architect of BenixOS, DeviceNix, and Thunderhead."
+author:
+  name: Douglas Lockamy
+  location: Cary, NC
+  github: dlockamy
+  email: dlockamy@gmail.com
+
+url: "https://dlockamy.github.io"
+baseurl: ""
+
+permalink: /posts/:year/:month/:day/:title/
+
+theme: null
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-github-metadata
+
+github_username: dlockamy
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Collections
+collections:
+  projects:
+    output: true
+    permalink: /projects/:name/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "projects"
+    values:
+      layout: "project"
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: "post"
+
+# Exclude from build
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - README.md
+  - .git
