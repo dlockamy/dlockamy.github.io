@@ -10,7 +10,7 @@
   stack: "C / Yocto / Headless Core OS"
   domain: devicenix.com
   status: active
-  description: "Core OS layer following Darwin model. Provides OS Kit, Message Kit, and Registry Service."
+  description: "Core OS layer. Provides OS Kit, Message Kit, and Registry Service."
 
 - name: Thunderhead
   category: systems
@@ -66,7 +66,7 @@
   stack: "SaaS / Sales to Manufacturing"
   domain: spec-up.com
   status: planning
-  description: "General-purpose management suite for sales to manufacturing workflows. Project by Miette Lewis."
+  description: "General-purpose management suite for sales to manufacturing workflows. Product configurator, quoting, order management, production tracking, and more."
 
 - name: Bitchain
   category: systems
