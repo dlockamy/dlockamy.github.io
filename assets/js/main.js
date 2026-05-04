@@ -83,6 +83,7 @@ setInterval(tick, 1000);
   const bars = document.querySelectorAll('.skill-bar-fill');
   if (!bars.length) return;
 
+  // Store target widths and set to 0 initially
   bars.forEach(bar => {
     bar.dataset.target = bar.style.width;
     bar.style.width = '0';
@@ -100,3 +101,6 @@ setInterval(tick, 1000);
 
   bars.forEach(bar => observer.observe(bar));
 })();
+
+// --- PROJECT ENTRY HOVER SOUND (subtle) ---
+// Intentionally silent — preserving the mission control calm
