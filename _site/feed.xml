@@ -1,26 +1,327 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>dlockamy.com | All The Bits, All Lined up</title>
-    <description>Code, code, and more code. Development playground for Douglas J Lockamy.</description>
+    <title>dlockamy.com | My God, It&apos;s Full of Bits.....</title>
+    <description>Senior DevOps Engineer. Builder of pipelines, infrastructure, and things that ship reliably.</description>
     <link>http://0.0.0.0:4000/</link>
     <atom:link href="http://0.0.0.0:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 14 Oct 2025 21:50:52 -0400</pubDate>
-    <lastBuildDate>Tue, 14 Oct 2025 21:50:52 -0400</lastBuildDate>
-    <generator>Jekyll v4.3.2</generator>
+    <pubDate>Tue, 05 May 2026 00:12:09 +0000</pubDate>
+    <lastBuildDate>Tue, 05 May 2026 00:12:09 +0000</lastBuildDate>
+    <generator>Jekyll v4.4.1</generator>
     
       <item>
-        <title>Howdie World</title>
-        <description>&lt;p&gt;Hello World&lt;/p&gt;
+        <title>Your Binary Assets Deserve Version Control Too</title>
+        <description>&lt;p&gt;&lt;em&gt;Introducing bitchain: a lightweight CLI for versioning the files your tools forgot about&lt;/em&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;the-problem-nobody-talks-about&quot;&gt;The Problem Nobody Talks About&lt;/h2&gt;
+
+&lt;p&gt;Your code is versioned. Every change tracked, every release tagged, every rollback a one-liner. It’s one of the most reliable parts of modern software development.&lt;/p&gt;
+
+&lt;p&gt;Now open your project’s asset folder.&lt;/p&gt;
+
+&lt;p&gt;Those textures, 3D models, audio files, and compiled shaders? That library of hero images, marketing banners, and video assets for your website? Odds are they live somewhere outside your version control — maybe a shared drive, maybe an S3 bucket someone set up two years ago, maybe a Slack thread where the “final_final_v3” file got dropped. Nobody remembers which version shipped with v2.1. Nobody’s sure if the QA environment has the right set of assets. And when something looks wrong in production, there’s no &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;git log&lt;/code&gt; to reach for.&lt;/p&gt;
+
+&lt;p&gt;This is the binary asset problem, and it’s more common than anyone admits.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;why-git-doesnt-save-you-here&quot;&gt;Why Git Doesn’t Save You Here&lt;/h2&gt;
+
+&lt;p&gt;Git is exceptional at what it was built for: tracking changes in text files. Source code, configs, markdown — Git handles these beautifully because it can compare files line by line, store only what changed, and merge contributions from multiple people.&lt;/p&gt;
+
+&lt;p&gt;Binary files break every one of those assumptions.&lt;/p&gt;
+
+&lt;p&gt;A 50MB texture doesn’t have lines. When a single pixel changes, Git can’t compute a delta — it has to store the whole file again. Commit enough asset updates and your repository balloons to gigabytes before the project is even close to shipping. Clone times stretch. CI pipelines crawl. Developers start skipping pulls because they don’t want to sit through a 2GB download just to test a UI change.&lt;/p&gt;
+
+&lt;p&gt;The usual workaround is Git LFS, which replaces binary files with small text pointers and stores the real data on a separate server. It helps, but it’s still a Git extension — it requires your whole team to be comfortable with Git, your CI/CD toolchain to support it, and someone to keep an eye on storage and bandwidth limits that most platforms charge for separately. It’s a reasonable patch, not a real solution.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;the-tools-built-for-this-are-expensive&quot;&gt;The Tools Built for This Are Expensive&lt;/h2&gt;
+
+&lt;p&gt;The solutions purpose-built for large binary asset management — Perforce, Unity Version Control — are genuinely good at the job. They’re also enterprise products with enterprise price tags and complexity. For an indie studio, a web agency, or an open source project that just wants assets versioned the same way its code is, they’re not a realistic option.&lt;/p&gt;
+
+&lt;p&gt;So most teams end up in one of two bad places: assets jammed into Git (and suffering for it), or assets living entirely out-of-band in cloud storage with no versioning, no history, and no reliable way to reproduce a past release.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;whats-actually-needed&quot;&gt;What’s Actually Needed&lt;/h2&gt;
+
+&lt;p&gt;The pattern that works for code is straightforward: break files into addressable units, store them somewhere durable, and keep a manifest that maps a specific version of your project to a specific set of those units. Tag the manifest, and you can reconstruct any release exactly — no guesswork, no “which S3 folder was that?”&lt;/p&gt;
+
+&lt;p&gt;That’s exactly how Git works internally. And it’s exactly what was missing for binary assets — until now.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;bitchain&lt;/strong&gt; brings that same content-addressed approach to any file, any size, stored anywhere you already have infrastructure. S3 bucket you’re already paying for? Use it. HTTP server? Works. Local disk for testing? Covered. The manifest is plain JSON, small enough to live in your Git repository, and precise enough to reconstruct an entire collection of binary assets down to the byte.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;how-bitchain-works&quot;&gt;How bitchain Works&lt;/h2&gt;
+
+&lt;p&gt;The idea behind bitchain is simple, and it’s the same idea that makes Git reliable: instead of tracking files by name or location, track them by their content.&lt;/p&gt;
+
+&lt;p&gt;When you run &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bitchain ingest&lt;/code&gt; on a file or directory, it does three things. It splits every file into fixed-size blocks (1MB by default). It computes a SHA-256 hash for each block — a fingerprint that is unique to that exact sequence of bytes. And it uploads those blocks to wherever you tell it: an S3 bucket, an HTTP server, or a local directory. When it’s done, it writes a single JSON manifest — the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.bitchain.json&lt;/code&gt; file — that records exactly which blocks make up each file, and where to find them.&lt;/p&gt;
+
+&lt;p&gt;That manifest is the version. It’s small enough to commit to your Git repository alongside your code. Tag it with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v1.2.0&lt;/code&gt; and you’ve permanently linked that release to a precise, reproducible set of binary assets. No ambiguity, no “I think that was the right folder.”&lt;/p&gt;
+
+&lt;p&gt;Reconstructing files is just as straightforward. Running &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bitchain rebuild&lt;/code&gt; reads the manifest, fetches each block from its URI, verifies the SHA-256 hash, and reassembles the original files exactly. If a block is available from multiple locations — say, both S3 and a CDN — bitchain tries each one in order and uses the first that responds. Your assets are as resilient as you make your storage.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;a-concrete-example-versioning-a-games-asset-pack&quot;&gt;A Concrete Example: Versioning a Game’s Asset Pack&lt;/h2&gt;
+
+&lt;p&gt;Say you’re shipping a game update and the art team has delivered a new set of character textures and UI sprites — a directory of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.png&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.fbx&lt;/code&gt; files totaling about 800MB. Here’s what that workflow looks like with bitchain.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Ingest the assets:&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bitchain ingest &lt;span class=&quot;nt&quot;&gt;--input&lt;/span&gt; ./assets/v1.2.0 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;--uri-base&lt;/span&gt; s3://my-game-studio/releases &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;--output&lt;/span&gt; assets-v1.2.0.bitchain.json
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;bitchain splits every file into blocks, uploads them to your S3 bucket, and writes &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;assets-v1.2.0.bitchain.json&lt;/code&gt;. That file is a few kilobytes of JSON — light enough to commit directly to your code repository.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Commit the manifest with your release:&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;git add assets-v1.2.0.bitchain.json
+git commit &lt;span class=&quot;nt&quot;&gt;-m&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;Add asset manifest for v1.2.0&quot;&lt;/span&gt;
+git tag v1.2.0
+git push origin v1.2.0
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Your QA environment, your CI pipeline, your release branch — they all now have a precise reference to the exact set of assets that belongs with this version of the game. Any engineer or automated system can reconstruct them on demand.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Rebuild on any machine:&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bitchain rebuild &lt;span class=&quot;nt&quot;&gt;--bitchain&lt;/span&gt; assets-v1.2.0.bitchain.json &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                 &lt;span class=&quot;nt&quot;&gt;--output-dir&lt;/span&gt; ./assets/restored
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Every block is fetched, hash-verified, and reassembled. If a block doesn’t match its expected SHA-256, the rebuild fails loudly — no silent corruption, no “this texture looks slightly off and we don’t know why.”&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;the-manifest-up-close&quot;&gt;The Manifest Up Close&lt;/h2&gt;
+
+&lt;p&gt;The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.bitchain.json&lt;/code&gt; file is worth a quick look, because it’s the key to everything bitchain does. Here’s a simplified example:&lt;/p&gt;
+
+&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;version&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;1.0&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;files&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;path&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;characters/hero_texture.png&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;blocks&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;hash&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;a3f1c8...&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;uris&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;s3://my-game-studio/releases/characters/hero_texture.png/a3f1c8...&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;https://cdn.example.com/blocks/a3f1c8...&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;A few things worth noting. The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;path&lt;/code&gt; field preserves the original file structure, so rebuilding restores your directory layout exactly as it was ingested. Each block lists multiple URIs — so you can back the same assets with both S3 and a CDN, and bitchain will fall back automatically if one is unavailable. And the whole thing is just JSON, which means it’s diffable, readable, and easy to validate in CI with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bitchain validate&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;This is what “version your assets like code” looks like in practice. The manifest lives in Git. The blocks live in your storage. And the two together give you something neither could provide alone: a precise, auditable, reconstructible history of your binary assets.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;versioning-assets-like-code-the-cicd-angle&quot;&gt;Versioning Assets Like Code: The CI/CD Angle&lt;/h2&gt;
+
+&lt;p&gt;The key insight is that the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.bitchain.json&lt;/code&gt; manifest is just a file. And because it’s just a file — plain text, human-readable, small enough to live in your repository — it participates in your existing Git workflow without any special integration or toolchain changes. Your branches, your tags, your pull requests, your CI checks: they all apply to the manifest the same way they apply to your code.&lt;/p&gt;
+
+&lt;p&gt;That means you can treat an asset release exactly like a code release.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;a-release-pipeline-for-binary-assets&quot;&gt;A Release Pipeline for Binary Assets&lt;/h2&gt;
+
+&lt;p&gt;Here’s what that looks like end to end, using a website content release as the example — a batch of new hero images, product photography, and video assets handed off by the design team. The same pattern applies equally to game asset packs, marketing materials, or any other collection of binaries that needs to follow a predictable path from creation to production.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Step 1 — Ingest on a feature branch&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;When the design team delivers the new content drop, a developer ingests it on a feature branch:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;git checkout &lt;span class=&quot;nt&quot;&gt;-b&lt;/span&gt; content/homepage-refresh-q2
+
+bitchain ingest &lt;span class=&quot;nt&quot;&gt;--input&lt;/span&gt; ./delivered/homepage-assets &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;--uri-base&lt;/span&gt; s3://my-web-agency/staging &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;--output&lt;/span&gt; homepage-refresh.bitchain.json
+
+git add homepage-refresh.bitchain.json
+git commit &lt;span class=&quot;nt&quot;&gt;-m&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;Ingest homepage refresh assets for Q2&quot;&lt;/span&gt;
+git push origin content/homepage-refresh-q2
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The blocks are now in staging storage. The manifest is in version control. The PR is open for review.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Step 2 — Validate in CI&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Your CI pipeline can validate the manifest structure automatically on every push:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bitchain validate homepage-refresh.bitchain.json
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;This catches malformed manifests, missing fields, or schema violations before they ever reach QA. It’s a ten-second check that eliminates an entire class of “the image didn’t load correctly” bugs that are otherwise maddening to diagnose in a staging environment.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Step 3 — QA rebuilds from the manifest&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;When the branch is ready for review, the staging environment rebuilds the assets directly from the manifest:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bitchain rebuild &lt;span class=&quot;nt&quot;&gt;--bitchain&lt;/span&gt; homepage-refresh.bitchain.json &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                 &lt;span class=&quot;nt&quot;&gt;--output-dir&lt;/span&gt; ./public/assets/current
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;QA is now reviewing against the exact files that were ingested — not a copy someone dragged into a shared drive, not whatever happened to be sitting in the staging bucket. If a reviewer spots a layout issue caused by an unexpected image dimension, you know with certainty which version of every asset was present when it occurred.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Step 4 — Tag and promote to production&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Once the content is approved, the manifest gets merged and tagged alongside the code release:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;git checkout main
+git merge content/homepage-refresh-q2
+git tag v4.1.0
+git push origin v4.1.0
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;That tag now points to both the code and the content manifest. Anyone — a developer, a deployment pipeline, or a teammate revisiting this release six months later — can check out &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v4.1.0&lt;/code&gt; and run &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bitchain rebuild&lt;/code&gt; to get the exact set of assets that shipped with that version of the site. No archaeology required.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;what-this-changes&quot;&gt;What This Changes&lt;/h2&gt;
+
+&lt;p&gt;The biggest shift isn’t technical — it’s operational. When assets follow the same branch-review-tag-release pattern as code, a few things get much easier:&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Rollbacks become real.&lt;/strong&gt; If &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v4.2.0&lt;/code&gt; ships with a broken hero image, rolling back isn’t “find the old files in the staging bucket and hope the folder names make sense.” It’s &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;git checkout v4.1.0&lt;/code&gt; followed by &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bitchain rebuild&lt;/code&gt;. The assets are as recoverable as the code.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Environments stay in sync.&lt;/strong&gt; Development, staging, QA, and production each rebuild from a manifest. There’s no drift, no “works on my machine,” no guessing whether the right asset version made it into the right environment.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Audits are straightforward.&lt;/strong&gt; Because every manifest is committed to Git, you have a complete history of which assets were part of which release, who merged them, and when. The kind of audit trail that’s painful to reconstruct after the fact comes for free.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;getting-started-with-bitchain&quot;&gt;Getting Started with bitchain&lt;/h2&gt;
+
+&lt;p&gt;bitchain is open source under the Apache 2.0 license and available on GitHub at &lt;a href=&quot;https://github.com/dlockamy/bitchain&quot;&gt;github.com/dlockamy/bitchain&lt;/a&gt;. It’s built in Rust, so you’ll need the Rust toolchain installed to build from source — if you don’t have it, &lt;a href=&quot;https://rustup.rs&quot;&gt;rustup.rs&lt;/a&gt; gets you there in one command.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Build from source:&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;git clone https://github.com/dlockamy/bitchain.git
+&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;bitchain
+cargo build &lt;span class=&quot;nt&quot;&gt;--release&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The compiled binary lands in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;./target/release/bitchain&lt;/code&gt;. Add it to your PATH and you’re ready to go.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;your-first-ingest&quot;&gt;Your First Ingest&lt;/h2&gt;
+
+&lt;p&gt;The fastest way to see bitchain in action is a local ingest — no S3, no credentials, just a directory of files and a manifest on disk.&lt;/p&gt;
+
+&lt;p&gt;Pick any folder of binary files on your machine: a set of textures, a folder of images, a collection of audio files. Then run:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bitchain ingest &lt;span class=&quot;nt&quot;&gt;--input&lt;/span&gt; ./my-assets &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;--output-dir&lt;/span&gt; ./blocks &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;--output&lt;/span&gt; my-assets.bitchain.json
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;In a few seconds you’ll have two things: a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;./blocks&lt;/code&gt; directory containing the hashed block files, and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;my-assets.bitchain.json&lt;/code&gt; — the manifest that describes exactly how to put them back together. Open the manifest and take a look. The structure is intentionally readable.&lt;/p&gt;
+
+&lt;p&gt;To verify the round-trip, rebuild from the manifest into a new directory:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bitchain rebuild &lt;span class=&quot;nt&quot;&gt;--bitchain&lt;/span&gt; my-assets.bitchain.json &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                 &lt;span class=&quot;nt&quot;&gt;--output-dir&lt;/span&gt; ./restored
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Compare &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;./my-assets&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;./restored&lt;/code&gt; — they’ll be identical, byte for byte.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;adding-s3-storage&quot;&gt;Adding S3 Storage&lt;/h2&gt;
+
+&lt;p&gt;When you’re ready to move blocks off local disk and into shared storage, swap in an &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;--uri-base&lt;/code&gt; pointing at your S3 bucket. Run &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bitchain --setup-config&lt;/code&gt; first to store your AWS credentials:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bitchain &lt;span class=&quot;nt&quot;&gt;--setup-config&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The CLI will prompt for your AWS Access Key ID, Secret Access Key, region, and an optional session token. Credentials are saved to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;~/.bitchain/config&lt;/code&gt;. Then ingest as before, with your bucket as the destination:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bitchain ingest &lt;span class=&quot;nt&quot;&gt;--input&lt;/span&gt; ./my-assets &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;--uri-base&lt;/span&gt; s3://your-bucket/your-prefix &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;--output&lt;/span&gt; my-assets.bitchain.json
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Blocks are uploaded to S3 and the manifest URIs point there automatically. From this point, any machine with access to that bucket — your CI runner, a QA environment, a teammate’s workstation — can rebuild the full asset set from the manifest alone.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;a-few-useful-flags-to-know&quot;&gt;A Few Useful Flags to Know&lt;/h2&gt;
+
+&lt;p&gt;Before you go, a handful of flags that will save you time:&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;--dry-run&lt;/code&gt; simulates an ingest without writing any files or uploading any blocks. Useful for checking that your inputs and URI base are correct before committing to a large upload:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bitchain ingest &lt;span class=&quot;nt&quot;&gt;--input&lt;/span&gt; ./my-assets &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;--uri-base&lt;/span&gt; s3://your-bucket/your-prefix &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;--dry-run&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;--block-size&lt;/code&gt; lets you tune the block size in bytes if the 1MB default doesn’t suit your asset profile. Larger blocks mean fewer URIs per file; smaller blocks give finer-grained deduplication:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bitchain ingest &lt;span class=&quot;nt&quot;&gt;--input&lt;/span&gt; ./my-assets &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;--block-size&lt;/span&gt; 4194304 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;--output&lt;/span&gt; my-assets.bitchain.json
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bitchain show&lt;/code&gt; prints any manifest to stdout — handy for a quick inspection without opening the file manually:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bitchain show my-assets.bitchain.json
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;whats-next&quot;&gt;What’s Next&lt;/h2&gt;
+
+&lt;p&gt;bitchain is a foundation. The manifest format is stable and versioned, the Apache 2.0 license means you can build on it freely, and because blocks are stored at plain URIs, the storage layer is entirely under your control.&lt;/p&gt;
+
+&lt;p&gt;If you’re managing game assets, website content, or any collection of binary files that deserves the same rigorous versioning your code already gets — give it a try. File issues, open PRs, and follow the project at &lt;a href=&quot;https://github.com/dlockamy/bitchain&quot;&gt;github.com/dlockamy/bitchain&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Your assets have earned it.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;about-the-author&quot;&gt;About the Author&lt;/h2&gt;
+
+&lt;p&gt;Douglas Lockamy is a Senior DevOps Engineer with nearly 20 years in the software industry, more than a decade of which has been spent in the DevOps trenches — building pipelines, taming infrastructure, and finding better ways to ship software reliably. bitchain grew out of a real frustration: watching teams nail their code release process while their binary assets remained a chaotic afterthought. He builds in the open and welcomes issues, PRs, and conversation.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/dlockamy&quot;&gt;GitHub&lt;/a&gt; · &lt;a href=&quot;https://www.linkedin.com/in/douglas-lockamy-49097b33/&quot;&gt;LinkedIn&lt;/a&gt;&lt;/p&gt;
 </description>
-        <pubDate>Sun, 04 Sep 2016 21:31:00 -0400</pubDate>
-        <link>http://0.0.0.0:4000/jekyll/update/2016/09/04/hello-world.html</link>
-        <guid isPermaLink="true">http://0.0.0.0:4000/jekyll/update/2016/09/04/hello-world.html</guid>
+        <pubDate>Sun, 03 May 2026 04:00:00 +0000</pubDate>
+        <link>http://0.0.0.0:4000/posts/2026/05/03/your-binary-assets-deserve-version-control/</link>
+        <guid isPermaLink="true">http://0.0.0.0:4000/posts/2026/05/03/your-binary-assets-deserve-version-control/</guid>
+        
+        <category>binary-assets</category>
+        
+        <category>versioning</category>
+        
+        <category>rust</category>
+        
+        <category>bitchain</category>
+        
+        <category>cicd</category>
         
         
-        <category>jekyll</category>
+        <category>devops</category>
         
-        <category>update</category>
+        <category>tools</category>
+        
+        <category>open-source</category>
         
       </item>
     
