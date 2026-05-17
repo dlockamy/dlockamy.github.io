@@ -16,3 +16,6 @@
 - key: THUNDERHEAD
   value: PLANNING
   status: amber
+- key: SPEC-UP
+  value: LIVE
+  status: green

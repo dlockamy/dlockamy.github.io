@@ -63,10 +63,10 @@
 
 - name: Spec-Up
   category: web
-  stack: "SaaS / Sales to Manufacturing"
+  stack: "Flutter web / Go API / DynamoDB / AWS"
   domain: spec-up.com
-  status: planning
-  description: "General-purpose management suite for sales to manufacturing workflows. Product configurator, quoting, order management, production tracking, and more."
+  status: active
+  description: "Sales-to-manufacturing management suite for the corrugated industry. Product configurator, quoting, order management, production tracking. Prod live: API on AWS EC2 fronted by Cloudflare with end-to-end TLS; Flutter app + landing on Cloudflare Pages."
 
 - name: Bitchain
   category: systems
