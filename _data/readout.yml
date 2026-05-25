@@ -1,7 +1,16 @@
 - key: GITHUB
   value: LINKED
   status: green
+- key: SPEC-UP
+  value: LIVE
+  status: green
+- key: BLOG
+  value: ONLINE
+  status: green
 - key: BITCHAIN
+  value: IN_DEV
+  status: normal
+- key: REFRACTION
   value: IN_DEV
   status: normal
 - key: BENIXOS
@@ -10,12 +19,9 @@
 - key: DEVICENIX
   value: IN_DEV
   status: normal
-- key: BLOG
-  value: ONLINE
-  status: green
 - key: THUNDERHEAD
+  value: IN_DEV
+  status: normal
+- key: QUICKRING
   value: PLANNING
   status: amber
-- key: SPEC-UP
-  value: LIVE
-  status: green

@@ -16,43 +16,29 @@
   category: systems
   stack: "Hardware / Edge Compute Server"
   domain: thunderhead.systems
-  status: planning
+  status: active
   description: "Consumer-friendly personal edge compute server. Bring the cloud home."
 
 - name: ClusterZer0
   category: systems
-  stack: "Terraform / JSON / IaC"
-  domain: clusterzer0.com
-  status: planning
-  description: "Declarative JSON format for infrastructure state, deployed via opinionated Terraform modules."
-
-- name: Legitimate Salvage
-  category: web
-  stack: "React / Collectibles Marketplace"
-  domain: legitimatesalvage.com
-  status: planning
-  description: "Community buy/sell/trade marketplace for collectibles organized by fandom and brand."
-
-- name: Physical Components
-  category: web
-  stack: "React / Music & Film Market"
-  domain: physicalcomponents.com
-  status: planning
-  description: "Music and film collectibles marketplace. Named after NIN's physical companion releases."
+  stack: "Rust / Go / Developer Tools"
+  domain: github.com/clusterzer0
+  status: active
+  description: "Developer Tools platform and GitHub organization. Houses the Bitchain binary versioning suite — Bitchain CLI, Refraction server, Bitchain Studio — and SlashBuilder."
 
 - name: QuickRing
-  category: web
-  stack: "Node / QR Studio / Pub-Sub"
+  category: systems
+  stack: "Rust / Go / Message Fabric"
   domain: quickring.me
   status: planning
-  description: "QR code generation, hosting, and analytics platform with merch studio and binding service."
+  description: "Device, app, and people message fabric. A unified message pipeline from kernel-native local IPC up through a distributed network protocol — one wire contract from process to planet."
 
 - name: SlashBuilder
   category: web
   stack: "Wiki + Aggregator / DevOps"
   domain: slashbuilder.com
   status: active
-  description: "Community portal for DevOps engineers — part documentation wiki, part news aggregator. Repo: github.com/dlockamy/slashbuilder"
+  description: "Community portal for DevOps engineers — part documentation wiki, part news aggregator. Repo: github.com/clusterzer0/slashbuilder"
 
 - name: Pogo Pops
   category: creative
@@ -71,20 +57,20 @@
 - name: Bitchain
   category: systems
   stack: "Rust / SHA-256 / S3 / CLI"
-  domain: github.com/dlockamy/bitchain
+  domain: github.com/clusterzer0/bitchain
   status: active
   description: "Lightweight virtual filesystem using the internet as block storage. Content-addressed binary versioning via SHA-256 blocks and a portable JSON manifest."
 
 - name: Bitchain Studio
   category: systems
   stack: "Desktop / Mobile / GUI"
-  domain: github.com/dlockamy/bitchain-studio
+  domain: github.com/clusterzer0/bitchain-studio
   status: planning
   description: "Standalone desktop and mobile GUI for creating and managing bitchain bundles. The visual interface to the bitchain CLI."
 
 - name: Refraction
   category: web
   stack: "Self-hosted SaaS / Enterprise"
-  domain: github.com/dlockamy/refraction
-  status: planning
+  domain: github.com/clusterzer0/refraction
+  status: active
   description: "Self-hosted enterprise SaaS for team-based bitchain management. Multi-user, access control, audit logs, deployable on-premises."
