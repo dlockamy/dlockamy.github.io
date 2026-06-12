@@ -21,17 +21,17 @@
 
 - name: ClusterZer0
   category: systems
-  stack: "Rust / Go / Developer Tools"
+  stack: "Rust / Developer Tools"
   domain: github.com/clusterzer0
   status: active
-  description: "Developer Tools platform and GitHub organization. Houses the Bitchain binary versioning suite — Bitchain CLI, Refraction server, Bitchain Studio — and SlashBuilder."
+  description: "Developer Tools platform and GitHub organization. Houses the Bitchain binary-versioning suite — Bitchain CLI and the Refraction server — and SlashBuilder."
 
 - name: QuickRing
   category: systems
-  stack: "Rust / Go / Message Fabric"
+  stack: "Rust / Protocol / Federation"
   domain: quickring.me
-  status: planning
-  description: "Device, app, and people message fabric. A unified message pipeline from kernel-native local IPC up through a distributed network protocol — one wire contract from process to planet."
+  status: active
+  description: "An open standard for household computing — a federated, household-first message, presence, and file fabric. One wire contract from kernel-native local IPC up to a distributed, federated network protocol — from process to planet. The protocol spine behind quickring.social, Courier, and the Thunderhead device fleet."
 
 - name: SlashBuilder
   category: web
@@ -61,16 +61,9 @@
   status: active
   description: "Lightweight virtual filesystem using the internet as block storage. Content-addressed binary versioning via SHA-256 blocks and a portable JSON manifest."
 
-- name: Bitchain Studio
-  category: systems
-  stack: "Desktop / Mobile / GUI"
-  domain: github.com/clusterzer0/bitchain-studio
-  status: planning
-  description: "Standalone desktop and mobile GUI for creating and managing bitchain bundles. The visual interface to the bitchain CLI."
-
 - name: Refraction
   category: web
-  stack: "Self-hosted SaaS / Enterprise"
+  stack: "Rust / axum / Self-hosted SaaS"
   domain: github.com/clusterzer0/refraction
   status: active
-  description: "Self-hosted enterprise SaaS for team-based bitchain management. Multi-user, access control, audit logs, deployable on-premises."
+  description: "Self-hosted enterprise SaaS for team-based bitchain management. Multi-user, access control, audit logs, deployable on-premises. Its storage engine also powers the paid hosted tier of quickring.social."
