@@ -1,0 +1,15 @@
+[submodule ".github/agents"]
+	path = .github/agents
+	url = git@github.com:dlockamy/agents.git
+[submodule ".github/skills"]
+	path = .github/skills
+	url = git@github.com:dlockamy/skills.git
+[submodule ".claude/agents"]
+	path = .claude/agents
+	url = git@github.com:dlockamy/agents.git
+[submodule ".claude/skills"]
+	path = .claude/skills
+	url = git@github.com:dlockamy/skills.git
+[submodule ".claude/context"]
+	path = .claude/context
+	url = git@github.com:dlockamy/context.git
