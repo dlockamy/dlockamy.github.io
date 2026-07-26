@@ -31,7 +31,21 @@
   stack: "Rust / Protocol / Federation"
   domain: quickring.me
   status: active
-  description: "An open standard for household computing — a federated, household-first message, presence, and file fabric. One wire contract from kernel-native local IPC up to a distributed, federated network protocol — from process to planet. The protocol spine behind quickring.social, Courier, and the Thunderhead device fleet."
+  description: "An open standard for household computing — a federated, household-first message, presence, and file fabric. One wire contract from kernel-native local IPC up to a distributed, federated network protocol — from process to planet. v0 shipped: a real Rust/axum hub with Redis pub/sub fanout, live in prod today. The protocol spine behind quickring.social, Courier, and the Thunderhead device fleet."
+
+- name: Sol
+  category: systems
+  stack: "Terraform / Docker / JCasC / Proxmox"
+  domain: softsurve.com
+  status: active
+  description: "Private home network and infrastructure-as-code substrate. Terraform-managed Docker services (Jenkins, Nexus, Grafana, Prometheus, Loki) on a Proxmox hypervisor, JCasC-driven CI/CD, Google Workspace SSO at the reverse-proxy layer, and — as of this year — an MCP server so AI agents can query build state directly."
+
+- name: Sirius
+  category: systems
+  stack: "Terraform / AWS ECS / ALB"
+  domain: —
+  status: active
+  description: "Sol's sibling network — the shared, customer-facing PROD platform on AWS ECS behind Quickring's hub and Spec-Up's API. A different star for a genuinely different network: Sol stays home/internal-only; Sirius is the surface real users hit."
 
 - name: SlashBuilder
   category: web

@@ -23,5 +23,11 @@
   value: IN_DEV
   status: normal
 - key: QUICKRING
-  value: PLANNING
-  status: amber
+  value: IN_DEV
+  status: normal
+- key: SOL
+  value: LIVE
+  status: green
+- key: SIRIUS
+  value: IN_DEV
+  status: normal
