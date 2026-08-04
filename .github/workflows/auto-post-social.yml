@@ -1,0 +1,405 @@
+name: Auto-post to social media (multi-brand)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'brands/*/posts/**'
+      - '.github/social-config.yml'
+  workflow_dispatch:
+    inputs:
+      brand:
+        description: 'Brand to post (or all)'
+        required: false
+        default: 'all'
+
+jobs:
+  auto-post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install PyYAML requests tweepy bluesky-sdk python-dateutil
+
+      - name: Detect changed posts
+        id: detect
+        run: |
+          python3 << 'PYTHON_EOF'
+          import os
+          import json
+          from pathlib import Path
+
+          # Get list of changed files
+          if os.getenv('GITHUB_EVENT_NAME') == 'workflow_dispatch':
+              # Manual trigger: post all posts from specified brand or all brands
+              brand_filter = "${{ github.event.inputs.brand }}"
+              if brand_filter == 'all':
+                  posts = list(Path('brands').glob('*/posts/*.md'))
+              else:
+                  posts = list(Path(f'brands/{brand_filter}/posts').glob('*.md'))
+          else:
+              # Auto trigger: only changed posts
+              import subprocess
+              result = subprocess.run(
+                  ['git', 'diff', '--name-only', 'HEAD~1', 'HEAD'],
+                  capture_output=True, text=True
+              )
+              changed = [f for f in result.stdout.split('\n') if f.startswith('brands/') and f.endswith('.md')]
+              posts = [Path(f) for f in changed]
+
+          posts = [str(p) for p in posts if p.exists()]
+          print(f"Found {len(posts)} posts: {posts}")
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"posts={json.dumps(posts)}\n")
+          PYTHON_EOF
+
+      - name: Load config & parse posts
+        id: parse
+        run: |
+          python3 << 'PYTHON_EOF'
+          import os
+          import json
+          import yaml
+          from pathlib import Path
+          from datetime import datetime
+
+          # Load social config
+          with open('.github/social-config.yml') as f:
+              config = yaml.safe_load(f)
+
+          # Load brand configs
+          brand_configs = {}
+          for brand_dir in Path('brands').iterdir():
+              if brand_dir.is_dir():
+                  brand_yml = brand_dir / 'brand.yml'
+                  if brand_yml.exists():
+                      with open(brand_yml) as f:
+                          brand_configs[brand_dir.name] = yaml.safe_load(f)
+
+          posts_to_post = json.loads(os.environ.get('POSTS', '[]'))
+          post_data = {}
+
+          for post_path in posts_to_post:
+              if not os.path.exists(post_path):
+                  continue
+
+              with open(post_path) as f:
+                  content = f.read()
+
+              # Extract frontmatter
+              import re
+              match = re.match(r'^---\n(.*?)\n---', content, re.DOTALL)
+              if not match:
+                  continue
+
+              frontmatter_str = match.group(1)
+              body = content[match.end():].strip()
+
+              # Parse YAML frontmatter
+              try:
+                  fm = yaml.safe_load(frontmatter_str)
+              except:
+                  continue
+
+              title = fm.get('title', 'Untitled')
+              date = fm.get('date', datetime.now().strftime('%Y-%m-%d'))
+              brands = fm.get('brands', [])
+              excerpt = fm.get('excerpt', body[:200])
+              social_overrides = fm.get('social_overrides', {})
+
+              # Extract brand from path
+              path_parts = Path(post_path).parts
+              brand_from_path = path_parts[1] if len(path_parts) > 1 else None
+
+              # If brands not specified in frontmatter, use path-based brand
+              if not brands and brand_from_path:
+                  brands = [brand_from_path]
+
+              # Get blog URL (adjust domain per brand)
+              for brand in brands:
+                  if brand in brand_configs:
+                      brand_url = brand_configs[brand].get('url', f'https://{brand}.com')
+                      url = f"{brand_url}/blog/{date.replace('-', '/')}/{Path(post_path).stem}"
+
+                      # Check if old post
+                      post_dt = datetime.strptime(str(date), '%Y-%m-%d')
+                      days_old = (datetime.now() - post_dt).days
+                      is_resurfaced = days_old > 90
+
+                      post_data[post_path] = {
+                          'brand': brand,
+                          'title': title,
+                          'date': str(date),
+                          'excerpt': excerpt,
+                          'url': url,
+                          'is_resurfaced': is_resurfaced,
+                          'social_overrides': social_overrides,
+                          'config': config['brands'].get(brand, {}),
+                          'brand_config': brand_configs.get(brand, {})
+                      }
+
+          # Save for next step
+          with open('/tmp/posts_data.json', 'w') as f:
+              json.dump(post_data, f)
+
+          print(f"Parsed {len(post_data)} posts")
+          GITHUB_OUTPUT = os.environ.get('GITHUB_OUTPUT', '')
+          if GITHUB_OUTPUT:
+              with open(GITHUB_OUTPUT, 'a') as f:
+                  f.write(f"post_count={len(post_data)}\n")
+          PYTHON_EOF
+        env:
+          POSTS: ${{ steps.detect.outputs.posts }}
+
+      - name: Generate social posts
+        id: generate
+        run: |
+          python3 << 'PYTHON_EOF'
+          import json
+
+          with open('/tmp/posts_data.json') as f:
+              posts = json.load(f)
+
+          social_posts = {}
+
+          for post_path, data in posts.items():
+              brand = data['brand']
+              title = data['title']
+              url = data['url']
+              excerpt = data['excerpt']
+              is_resurfaced = data['is_resurfaced']
+              config = data['config']
+              overrides = data['social_overrides']
+
+              prefix = "🔄 " if is_resurfaced else ""
+              date_note = f"From {data['date']}. " if is_resurfaced else ""
+
+              hashtags = ' '.join(config.get('hashtags', []))
+              mentions = config.get('mention_brands', [])
+              mention_str = ''.join([f" cc: @{m}" for m in mentions]) if mentions else ""
+
+              # Generate per-platform posts
+              if 'twitter' in overrides:
+                  twitter_text = overrides['twitter']
+              else:
+                  twitter_text = f"{prefix}{title}\n\n{date_note}{url}\n\n{hashtags}{mention_str}"
+
+              if 'linkedin' in overrides:
+                  linkedin_text = overrides['linkedin']
+              else:
+                  linkedin_text = f"{prefix}{title}\n\n{date_note}{excerpt}\n\nRead more: {url}"
+
+              if 'bluesky' in overrides:
+                  bluesky_text = overrides['bluesky']
+              else:
+                  bluesky_text = f"{prefix}{title}\n\n{date_note}{url}"
+
+              if 'facebook' in overrides:
+                  facebook_text = overrides['facebook']
+              else:
+                  facebook_text = f"{prefix}{title}\n\n{date_note}{excerpt}\n\n{url}"
+
+              social_posts[post_path] = {
+                  'brand': brand,
+                  'config': config,
+                  'posts': {
+                      'twitter': twitter_text,
+                      'linkedin': linkedin_text,
+                      'bluesky': bluesky_text,
+                      'facebook': facebook_text
+                  }
+              }
+
+          with open('/tmp/social_posts.json', 'w') as f:
+              json.dump(social_posts, f)
+
+          print(f"Generated posts for {len(social_posts)} posts")
+          PYTHON_EOF
+
+      - name: Post to Twitter
+        continue-on-error: true
+        run: |
+          python3 << 'PYTHON_EOF'
+          import json
+          import os
+          import tweepy
+
+          with open('/tmp/social_posts.json') as f:
+              posts = json.load(f)
+
+          for post_path, data in posts.items():
+              brand = data['brand']
+              config = data['config']
+
+              # Check if Twitter enabled
+              if not config.get('platforms', {}).get('twitter', {}).get('enabled'):
+                  continue
+
+              secret_key = config['platforms']['twitter']['secret_key']
+              creds_json = os.getenv(secret_key, '{}')
+
+              try:
+                  import json as j
+                  creds = j.loads(creds_json)
+                  twitter_creds = creds.get('twitter', {})
+              except:
+                  print(f"⚠️  No Twitter credentials for {brand}")
+                  continue
+
+              try:
+                  client = tweepy.Client(
+                      consumer_key=twitter_creds.get('api_key'),
+                      consumer_secret=twitter_creds.get('api_secret'),
+                      access_token=twitter_creds.get('access_token'),
+                      access_token_secret=twitter_creds.get('access_secret')
+                  )
+
+                  response = client.create_tweet(text=data['posts']['twitter'])
+                  print(f"✓ Posted to Twitter @{config['platforms']['twitter']['handle']}: {post_path}")
+              except Exception as e:
+                  print(f"✗ Twitter error for {brand}: {e}")
+          PYTHON_EOF
+        env:
+          SOCIAL_CREDS_DLOCKAMY: ${{ secrets.SOCIAL_CREDS_DLOCKAMY }}
+          SOCIAL_CREDS_LOCKAMYSTUDIOS: ${{ secrets.SOCIAL_CREDS_LOCKAMYSTUDIOS }}
+          SOCIAL_CREDS_SPEC_UP: ${{ secrets.SOCIAL_CREDS_SPEC_UP }}
+
+      - name: Post to LinkedIn
+        continue-on-error: true
+        run: |
+          python3 << 'PYTHON_EOF'
+          import json
+          import os
+          import requests
+
+          with open('/tmp/social_posts.json') as f:
+              posts = json.load(f)
+
+          for post_path, data in posts.items():
+              brand = data['brand']
+              config = data['config']
+
+              if not config.get('platforms', {}).get('linkedin', {}).get('enabled'):
+                  continue
+
+              secret_key = config['platforms']['linkedin']['secret_key']
+              creds_json = os.getenv(secret_key, '{}')
+
+              try:
+                  import json as j
+                  creds = j.loads(creds_json)
+                  linkedin_token = creds.get('linkedin', {}).get('token')
+              except:
+                  print(f"⚠️  No LinkedIn credentials for {brand}")
+                  continue
+
+              try:
+                  headers = {'Authorization': f'Bearer {linkedin_token}'}
+                  payload = {
+                      "commentary": data['posts']['linkedin'],
+                      "visibility": "PUBLIC"
+                  }
+                  resp = requests.post(
+                      'https://api.linkedin.com/v2/ugcPosts',
+                      json=payload,
+                      headers=headers
+                  )
+                  resp.raise_for_status()
+                  print(f"✓ Posted to LinkedIn for {brand}: {post_path}")
+              except Exception as e:
+                  print(f"✗ LinkedIn error for {brand}: {e}")
+          PYTHON_EOF
+        env:
+          SOCIAL_CREDS_DLOCKAMY: ${{ secrets.SOCIAL_CREDS_DLOCKAMY }}
+          SOCIAL_CREDS_LOCKAMYSTUDIOS: ${{ secrets.SOCIAL_CREDS_LOCKAMYSTUDIOS }}
+          SOCIAL_CREDS_SPEC_UP: ${{ secrets.SOCIAL_CREDS_SPEC_UP }}
+
+      - name: Post to Bluesky
+        continue-on-error: true
+        run: |
+          python3 << 'PYTHON_EOF'
+          import json
+          import os
+          from atproto import Client
+
+          with open('/tmp/social_posts.json') as f:
+              posts = json.load(f)
+
+          for post_path, data in posts.items():
+              brand = data['brand']
+              config = data['config']
+
+              if not config.get('platforms', {}).get('bluesky', {}).get('enabled'):
+                  continue
+
+              secret_key = config['platforms']['bluesky']['secret_key']
+              creds_json = os.getenv(secret_key, '{}')
+
+              try:
+                  import json as j
+                  creds = j.loads(creds_json)
+                  bsky_creds = creds.get('bluesky', {})
+              except:
+                  print(f"⚠️  No Bluesky credentials for {brand}")
+                  continue
+
+              try:
+                  client = Client()
+                  client.login(bsky_creds['handle'], bsky_creds['password'])
+                  client.send_post(data['posts']['bluesky'])
+                  print(f"✓ Posted to Bluesky @{config['platforms']['bluesky']['handle']}: {post_path}")
+              except Exception as e:
+                  print(f"✗ Bluesky error for {brand}: {e}")
+          PYTHON_EOF
+        env:
+          SOCIAL_CREDS_DLOCKAMY: ${{ secrets.SOCIAL_CREDS_DLOCKAMY }}
+          SOCIAL_CREDS_LOCKAMYSTUDIOS: ${{ secrets.SOCIAL_CREDS_LOCKAMYSTUDIOS }}
+          SOCIAL_CREDS_SPEC_UP: ${{ secrets.SOCIAL_CREDS_SPEC_UP }}
+
+      - name: Slack notify on success
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "✅ Multi-brand social posts published",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Multi-Brand Social Post Succeeded*\n\nPosted to: dlockamy, Lockamy Studios, Spec-Up\n\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Slack notify on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "❌ Multi-brand social post failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Multi-Brand Social Post Failed*\n\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
