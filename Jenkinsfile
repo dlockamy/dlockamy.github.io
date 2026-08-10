@@ -1,5 +1,10 @@
 pipeline {
-  agent any
+  // `agent any` was landing on agents with no docker (e.g. a macOS agent —
+  // see build #1/#2 failures: "docker: command not found"), which the
+  // per-stage `docker { ... reuseNode true }` blocks then fail on. Pin to
+  // a docker-capable Linux agent, matching the convention used by
+  // quickring/hub's Jenkinsfile.cd and courier's release pipeline.
+  agent { label 'earth' }
 
   environment {
     NEXUS_URL = 'https://nexus.softsurve.com'
@@ -50,7 +55,7 @@ pipeline {
         }
       }
       when {
-        branch 'main'
+        branch 'master' // this repo's actual default branch — was 'main', never matched
       }
       steps {
         withCredentials([usernamePassword(
