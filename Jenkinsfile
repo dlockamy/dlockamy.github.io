@@ -29,6 +29,14 @@ pipeline {
         docker {
           image 'ruby:3.1-slim'
           reuseNode true
+          // The agent's default docker run uses a fixed non-root UID, which
+          // can't write /var/lib/apt/lists — apt-get update failed with
+          // "Permission denied" (build #3), silently (no `set -e` in the sh
+          // block below), so build-essential never installed and the json
+          // gem's native extension had no compiler to build with. Matches
+          // why quickring/hub's release Jenkinsfile runs its Linux stage
+          // `.inside('-u root')` too.
+          args '-u root'
         }
       }
       steps {
@@ -52,6 +60,14 @@ pipeline {
         docker {
           image 'ruby:3.1-slim'
           reuseNode true
+          // The agent's default docker run uses a fixed non-root UID, which
+          // can't write /var/lib/apt/lists — apt-get update failed with
+          // "Permission denied" (build #3), silently (no `set -e` in the sh
+          // block below), so build-essential never installed and the json
+          // gem's native extension had no compiler to build with. Matches
+          // why quickring/hub's release Jenkinsfile runs its Linux stage
+          // `.inside('-u root')` too.
+          args '-u root'
         }
       }
       when {
