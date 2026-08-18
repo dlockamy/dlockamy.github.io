@@ -4,7 +4,7 @@ pipeline {
   // per-stage `docker { ... reuseNode true }` blocks then fail on. Pin to
   // a docker-capable Linux agent, matching the convention used by
   // quickring/hub's Jenkinsfile.cd and courier's release pipeline.
-  agent { label 'earth' }
+  agent { label 'linux-build' }
 
   environment {
     NEXUS_URL = 'https://nexus.softsurve.com'
