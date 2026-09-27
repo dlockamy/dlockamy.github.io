@@ -1,16 +1,9 @@
 - name: BenixOS
   category: systems
-  stack: "C / Yocto / Interactive UI Layer"
+  stack: "Rust / Yocto / Wayland"
   domain: benixos.com
   status: active
-  description: "Modern embedded OS framework inspired by BeOS kit/service architecture. Built on Yocto + Linux kernel."
-
-- name: DeviceNix
-  category: systems
-  stack: "C / Yocto / Headless Core OS"
-  domain: devicenix.com
-  status: active
-  description: "Core OS layer. Provides OS Kit, Message Kit, and Registry Service."
+  description: "Spiritual successor to BeOS's Kit model — a from-scratch OS built from composable Kits with stable APIs, no legacy BeAPI code or compatibility tax. Absorbed the DeviceNix core-OS project 2026-08. Stewarded under the SlashBuilder org (slash-builder/core + 15 more Kits)."
 
 - name: Thunderhead
   category: systems
@@ -18,13 +11,6 @@
   domain: thunderhead.systems
   status: active
   description: "Consumer-friendly personal edge compute server. Bring the cloud home."
-
-- name: ClusterZer0
-  category: systems
-  stack: "Rust / Developer Tools"
-  domain: github.com/clusterzer0
-  status: active
-  description: "Developer Tools platform and GitHub organization. Houses the Bitchain binary-versioning suite — Bitchain CLI and the Refraction server — and SlashBuilder."
 
 - name: QuickRing
   category: systems
@@ -38,21 +24,21 @@
   stack: "Terraform / Docker / JCasC / Proxmox"
   domain: softsurve.com
   status: active
-  description: "Private home network and infrastructure-as-code substrate. Terraform-managed Docker services (Jenkins, Nexus, Grafana, Prometheus, Loki) on a Proxmox hypervisor, JCasC-driven CI/CD, Google Workspace SSO at the reverse-proxy layer, and — as of this year — an MCP server so AI agents can query build state directly."
+  description: "Private home network and infrastructure-as-code substrate. Terraform-managed Docker services (Jenkins, Nexus, Grafana, Prometheus, Loki, WUD) on a Proxmox hypervisor, JCasC-driven CI/CD, Keycloak OIDC on each admin surface (no perimeter gate), and — as of this year — an MCP server so AI agents can query build state directly."
 
 - name: Sirius
   category: systems
   stack: "Terraform / AWS ECS / ALB"
   domain: —
   status: active
-  description: "Sol's sibling network — the shared, customer-facing PROD platform on AWS ECS behind Quickring's hub and Spec-Up's API. A different star for a genuinely different network: Sol stays home/internal-only; Sirius is the surface real users hit."
+  description: "Sol's sibling network — the shared, customer-facing PROD platform on AWS ECS behind Quickring's hub, Spec-Up's API, and the studio's Keycloak identity backend. A different star for a genuinely different network: Sol stays home/internal-only; Sirius is the surface real users (and real logins) hit."
 
 - name: SlashBuilder
-  category: web
-  stack: "Wiki + Aggregator / DevOps"
+  category: systems
+  stack: "Rust / OSS / Kit Architecture"
   domain: slashbuilder.com
   status: active
-  description: "Community portal for DevOps engineers — part documentation wiki, part news aggregator. Repo: github.com/clusterzer0/slashbuilder"
+  description: "The studio's open-source infrastructure org. Stewards the Hearth protocol, the BenixOS distribution, 16 composable Kits (storage, messaging, identity, gateway, and more), and the household fabric-edge gateway. Repo: github.com/slash-builder"
 
 - name: Pogo Pops
   category: creative
@@ -70,14 +56,14 @@
 
 - name: Bitchain
   category: systems
-  stack: "Rust / SHA-256 / S3 / CLI"
-  domain: github.com/clusterzer0/bitchain
+  stack: "Rust / BLAKE3 / S3 / CLI"
+  domain: github.com/slash-builder/bitchain
   status: active
-  description: "Lightweight virtual filesystem using the internet as block storage. Content-addressed binary versioning via SHA-256 blocks and a portable JSON manifest."
+  description: "Content-addressed binary versioning CLI. BLAKE3-hashed, FastCDC-chunked block storage with a portable manifest — the storage Kit's reference client."
 
 - name: Refraction
   category: web
   stack: "Rust / axum / Self-hosted SaaS"
-  domain: github.com/clusterzer0/refraction
+  domain: github.com/slash-builder/refraction
   status: active
   description: "Self-hosted enterprise SaaS for team-based bitchain management. Multi-user, access control, audit logs, deployable on-premises. Its storage engine also powers the paid hosted tier of quickring.social."
