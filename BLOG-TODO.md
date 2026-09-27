@@ -9,6 +9,14 @@ entirely since the note below was written. Status per item, below.
 summary depth already, so none of this is unpublished info — these are the
 "now go deeper" follow-ups, now overdue on all three.
 
+**2026-09-27 drop: two posts written, both dated 2026-09-27.** Item 2 is
+done (see its status below). The second post
+(`_posts/2026-09-27-the-bug-that-wasnt-a-2fa-prompt-working-as-reviewed.md`)
+was not in this queue — it's the Keycloak operator step-up flow /
+`access_token_lifespan` story from the same day, split out because it's a
+diagnosis-correction post rather than an operational-debt one. Items 1 and 3
+deliberately held back rather than shipped in the same drop.
+
 ## 1. Sol → Sirius: what actually happened when the naming convention met a real split
 
 **Status (2026-09-27): ready to write.** Sirius is fully live — real ECS
@@ -40,9 +48,24 @@ architecture decision."
 
 ## 2. Zero-trust-lite for a home lab — built, killed three weeks later, and the landmine it left behind
 
-**Status (2026-09-27): the whole story changed shape. This is a better,
-truer post than the one originally queued — write it as the full arc, not
-the how-to below (kept struck through for the record of what was planned).**
+**Status (2026-09-27): WRITTEN — shipped as
+`_posts/2026-09-27-a-stale-comment-a-dead-include-and-every-vhost-on-the-box-down-at-once.md`.**
+Written as the full arc, framed around the landing-page staleness pass that
+triggered the apply, with the oauth2-proxy build/kill compressed into one
+act rather than being the subject. The exclusion-list material from the
+original how-to angle survives as a paragraph (Nexus's CLI surface is still
+on JumpCloud LDAP for the identical reason it was on the oauth2-proxy
+exclusion list) — so item 3's "same fix, same shape" cross-link beat is
+still available and is now half-set-up.
+
+<details>
+<summary>Previous status (2026-09-27, before it was written)</summary>
+
+**The whole story changed shape. This is a better, truer post than the one
+originally queued — write it as the full arc, not the how-to below (kept
+struck through for the record of what was planned).**
+
+</details>
 
 **Real arc, in order:**
 1. Built oauth2-proxy as a reverse-proxy gate in front of Jenkins/Grafana/
