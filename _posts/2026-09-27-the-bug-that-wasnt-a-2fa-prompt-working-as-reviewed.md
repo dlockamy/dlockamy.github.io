@@ -77,14 +77,16 @@ is required on every login to these admin clients regardless of an
 existing realm session. The comment even names what it's emulating: the
 Keycloak-native equivalent of `prompt=login` / `max_age=0`.
 
-And the reason is not aesthetic. Consumer logins and operator logins share
-one realm SSO session — that's a direct consequence of a realm merge that
-landed the day before. Without this flow, a stolen consumer session cookie
-or a captured consumer password walks into Grafana, Jenkins, and the
-container-update watcher's admin surface with no second factor required.
-The flow stands in for a separate operator signing key that hasn't been
-built yet. It is load-bearing *because* of the convenience I'd just
-introduced somewhere else.
+And the reason is not aesthetic. Consumer logins and operator logins were
+about to share one realm SSO session — the flow was written the same day
+the operator clients were first staged into that realm, four days ahead of
+the merge actually going live. Without it, a stolen consumer session
+cookie or a captured consumer password walks into Grafana, Jenkins, and
+the container-update watcher's admin surface with no second factor
+required. The flow stands in for a separate operator signing key that
+hasn't been built yet. It is load-bearing *because* of a convenience that,
+at the moment it was written, hadn't shipped yet either — hardening put in
+before the door it protects was even open.
 
 So the proposed fix wasn't a fix. It was a two-line patch reopening
 exactly the attack path the control exists to close, and in a diff it
