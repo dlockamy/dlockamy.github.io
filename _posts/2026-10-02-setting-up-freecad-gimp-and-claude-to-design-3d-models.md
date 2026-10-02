@@ -364,7 +364,9 @@ says "Could not find a GIMP 3 config directory." Start it from Finder, not a
 shell: on my Mac, a first launch via `open -a GIMP` and via `gimp-console` from
 the command line both hung silently at 0% CPU. The app was freshly installed and
 quarantined, so I suspect a macOS first-run approval I couldn't see from a
-script, but I didn't confirm that. Restart GIMP after the plug-in installs, then *Filters → Development → Start Agent Bridge* in the open
+script, but I didn't confirm that. Launched by hand, GIMP opened without trouble,
+and everything after that point worked as the README says. Restart GIMP after
+the plug-in installs, then *Filters → Development → Start Agent Bridge* in the open
 window (or have the agent call `gimp_launch(mode="headless")` and skip the
 window entirely). Register it with Claude Code:
 
@@ -462,6 +464,35 @@ every install problem while it's still cheap to fix, and `tools/list` tells you
 the *real* tool names — they're namespaced (`gimp_new_image`, not `new_image`),
 and guessing from the README is how you lose an hour.
 
+The repo has a stdlib-only script for exactly this, `tools/mcp_probe.py`. Against
+the GIMP bridge:
+
+```sh
+python3 tools/mcp_probe.py list -- uvx gimp-agent-mcp serve
+```
+
+```
+server: gimp-agent-mcp
+39 tools
+  gimp_help
+  gimp_status
+  ...
+```
+
+39, matching the README. Because GIMP keeps running between calls, you can then
+launch it headless, open a file and read a pixel back, one `call` at a time:
+
+```sh
+python3 tools/mcp_probe.py call gimp_launch '{"mode":"headless"}' -- uvx gimp-agent-mcp serve
+python3 tools/mcp_probe.py call gimp_open '{"path":"docs/img/mount-plate-iso.png"}' -- uvx gimp-agent-mcp serve
+python3 tools/mcp_probe.py call gimp_measure '{"kind":"color","image_id":1,"x":5,"y":5}' -- uvx gimp-agent-mcp serve
+```
+
+The image came back as 1400 × 1400, which is what the renderer writes, and the
+pixel at (5, 5) read `[18, 18, 20, 255]` — the exact background colour the
+renderer paints. That's the independent check: a value I knew in advance, read
+back through the bridge, matching.
+
 Then **verify by measuring, never by "the call succeeded."** Both bridges will
 report success for a no-op. When I drove FreeCAD through the live session I built
 a plate-plus-boss-minus-bore and read the volume back: 49175.7 mm³ from the
@@ -516,11 +547,15 @@ is what I actually ran, as opposed to what I'm relaying from the vendors' docs:
   renderer, `doctor.sh`, `install.sh` (into a scratch directory), and
   `install-freecad-addon.sh` (with `--dest`, so nothing touched my real
   FreeCAD). I also installed GIMP 3.2.6 and `uv` with the exact `brew` commands
-  from Step 0 (both worked), and `gimp-agent-mcp install-skills` ran fine. **Not
-  run today: the GIMP bridge itself.** GIMP would not start on this Mac (see
-  Step 7), so `install-plugin`, `doctor` and the live bridge never got a chance
-  — that part of Step 7 is the bridge's README plus my September sessions, not
-  something I reproduced this morning.
+  from Step 0 (both worked), then ran the GIMP bridge: `install-skills`,
+  `install-plugin`, `doctor` (it found the config directory and the plug-in),
+  the bridge's own `smoke` command (24 checks against a headless GIMP, all
+  passed), and `tools/mcp_probe.py` over stdio — 39 tools listed, then a
+  headless launch, an image opened, and a pixel read back to the expected value.
+  **Not run today:** the *Filters → Development → Start Agent Bridge* menu path
+  in a live GUI window (I drove the headless mode instead, and didn't restart
+  the GUI GIMP that was already open), registering either bridge with `claude mcp add`, and the FreeCAD
+  bridge at all.
 - **2026-09-19, macOS, GIMP 3.2.6 + FreeCAD 1.1.3:** both bridges driven over
   stdio (`gimp-agent-mcp` 0.5.0, `freecad-mcp` 0.1.24), geometry read back and
   compared to hand-computed volume, headless and live-GUI paths agreeing.
