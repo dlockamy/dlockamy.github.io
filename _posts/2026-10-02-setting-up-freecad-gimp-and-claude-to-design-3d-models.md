@@ -247,9 +247,13 @@ all of this pointless.
 I verified each of these on FreeCAD 1.0.2 on macOS while preparing this post,
 because I wanted to quote behaviour I'd reproduced rather than half-remembered.
 
-**An uncaught exception exits 0.** Run a script that does `assert False` and
-FreeCAD prints `Exception while processing file: … [boom]` and returns success.
-A syntax error does the same. Any CI step that trusts the exit code, or an
+**An uncaught exception exits 0 — when you run a script *file*.** Run
+`freecadcmd script.py` where the script does `assert False` and FreeCAD prints
+`Exception while processing file: … [boom]` and returns success. A syntax error
+does the same. (The inline form is different: `freecadcmd -c "raise
+RuntimeError()"` exits 1. I tested both. The FreeCAD bridge's headless tool runs
+the `-c` form, so it reports failures honestly; a build script run as a file does
+not.) Any CI step that trusts the exit code, or an
 agent that reads "exit 0, ran fine", is trusting a number that cannot report
 failure. Thirty seconds spent making your toolchain fail on purpose is cheap
 insurance.
@@ -407,8 +411,10 @@ source before installing anything that exists to execute code on your machine,
 and so should you.
 
 **The load-bearing fact: this bridge needs the GUI open.** The addon runs inside
-FreeCAD and (in 0.1.24, the version I audited) imports the GUI at module scope,
-so every tool dies when you close the window. A file in the repo called `test_headless.py` does not mean the server
+FreeCAD and imports the GUI at module scope — line 2 of `rpc_server.py` is
+`import FreeCADGui`, which I checked in the current source (0.1.25) and not just
+the 0.1.24 I audited in September — so every tool dies when you close the
+window. A file in the repo called `test_headless.py` does not mean the server
 is headless — it's a tool that shells out to `freecadcmd` for heavy jobs
 (`execute_code_headless`, which is genuinely useful: a native OpenCascade crash
 only kills the helper, not your GUI session). Plan accordingly: the live bridge
@@ -428,15 +434,48 @@ reported the plain unversioned `…/FreeCAD/Mod`. `tools/install-freecad-addon.s
 does the asking for you, then clones the addon and copies it in (it never
 writes anywhere but where FreeCAD said, and takes `--dest` for a dry run).
 
-Then, once, by hand: restart FreeCAD, pick the **MCP Addon** workbench, and in
-the FreeCAD MCP menu tick **Auto-Start Server** — otherwise someone has to click
-*Start RPC Server* every launch, and a capability that needs a human click isn't
-automatable. Point the bridge at the real `freecadcmd` so the headless tool
-works, since the macOS one isn't on `PATH`:
+Auto-start matters: otherwise someone has to click *Start RPC Server* every
+launch, and a capability that needs a human click isn't automatable. The menu
+checkbox just writes `"auto_start_rpc": true` into `freecad_mcp_settings.json` in
+FreeCAD's user data directory (I read that in the addon's `InitGui.py` and
+`settings.py`), so the installer can do it for you:
+
+```sh
+./tools/install-freecad-addon.sh --autostart
+```
+
+It leaves every other setting in that file alone — including an auth token if you
+set one. Restart FreeCAD and the RPC server comes up by itself on
+`127.0.0.1:9875`; on my machine that took about twelve seconds, with no clicks.
+Point the bridge at the real `freecadcmd` so the headless tool works, since the
+macOS one isn't on `PATH`:
 
 ```sh
 claude mcp add freecad -- uvx freecad-mcp --freecadcmd /Applications/FreeCAD.app/Contents/Resources/bin/freecadcmd
 ```
+
+Here's the same thing on the FreeCAD side, driven with the probe script. It's
+17 tools, and `execute_code` takes a `code` argument:
+
+```sh
+python3 tools/mcp_probe.py call execute_code '{"code": "..."}' -- uvx freecad-mcp --freecadcmd <path>
+```
+
+The code built an 80 × 60 × 8 plate, fused a Ø28 × 26 boss on top, and cut a Ø14
+bore through both. I computed the expected volume separately —
+`80·60·8 + π·14²·26 − π·7²·34` — before running it:
+
+```
+EXPECTED 49175.7
+ACTUAL   49175.7   solids=1 shells=1 valid=True faces=9
+```
+
+Then the same part through `execute_code_headless` (a separate `freecadcmd`
+process) gave 49175.7 again. That's two code paths and one hand calculation all
+agreeing. `get_view` returns a screenshot of the live window — the probe script
+saves it to a file rather than printing base64:
+
+![The plate and boss as rendered by the live FreeCAD window, captured through the bridge](/images/freecad-live-bridge-view.png)
 
 Three things that differ from the GIMP bridge and will bite you if you assume
 they don't:
@@ -552,18 +591,25 @@ is what I actually ran, as opposed to what I'm relaying from the vendors' docs:
   the bridge's own `smoke` command (24 checks against a headless GIMP, all
   passed), and `tools/mcp_probe.py` over stdio — 39 tools listed, then a
   headless launch, an image opened, and a pixel read back to the expected value.
-  **Not run today:** the *Filters → Development → Start Agent Bridge* menu path
-  in a live GUI window (I drove the headless mode instead, and didn't restart
-  the GUI GIMP that was already open), registering either bridge with `claude mcp add`, and the FreeCAD
-  bridge at all.
+  **Also run today, on the FreeCAD side:** the addon installed into my real
+  FreeCAD with `--autostart` (RPC server up in ~12 s, addon 0.1.25 on FreeCAD
+  1.0.2, `get_rpc_status` healthy), both bridges registered with `claude mcp add`
+  and reporting Connected, and the plate-boss-bore volume matching the hand
+  calculation through both the live and headless paths. **Not run today:** the
+  *Filters → Development → Start Agent Bridge* menu path in a live GUI window (I
+  drove GIMP's headless mode, and didn't restart the GUI GIMP that was already
+  open), and the new tools in a fresh Claude Code session — registration takes
+  effect on restart.
 - **2026-09-19, macOS, GIMP 3.2.6 + FreeCAD 1.1.3:** both bridges driven over
   stdio (`gimp-agent-mcp` 0.5.0, `freecad-mcp` 0.1.24), geometry read back and
   compared to hand-computed volume, headless and live-GUI paths agreeing.
 - **2026-09-26, Ubuntu 24.04, Flatpak GIMP 3.2.6 + FreeCAD 1.1.3:** headless and
   GUI FreeCAD, GIMP batch, Bambu Studio opening the exported STL and
   independently reporting the same dimensions.
-- **Not claimed:** Windows; GIMP 2.10; any slicer other than Bambu Studio; and
-  `freecad-mcp` 0.1.25, which PyPI shows as current today and I haven't re-run.
+- **Not claimed:** Windows; GIMP 2.10; any slicer other than Bambu Studio; the
+  FreeCAD bridge's other tools (`run_fem_analysis`, the parts library, async
+  jobs); and FreeCAD 1.1.x on this particular Mac — today's FreeCAD runs were on
+  1.0.2 (Homebrew's current cask is 1.1.4).
 
 If something here doesn't reproduce for you, that's more useful to me than a
 star — open an issue on the repo.
