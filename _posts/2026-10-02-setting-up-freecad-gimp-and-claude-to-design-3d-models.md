@@ -347,11 +347,18 @@ headless mode. From its README:
 
 ```sh
 uvx gimp-agent-mcp install-plugin
-uvx gimp-agent-mcp install-skills
+uvx gimp-agent-mcp install-skills --client claude
 uvx gimp-agent-mcp doctor
 ```
 
-Restart GIMP, then *Filters → Development → Start Agent Bridge* in the open
+(`install-skills` defaults to every agent client it finds; `--client claude`
+keeps it to Claude Code.) **Start GIMP by hand once before `install-plugin`** —
+the plug-in installer needs GIMP's profile directory to exist, and without it
+says "Could not find a GIMP 3 config directory." Start it from Finder, not a
+shell: on my Mac, a first launch via `open -a GIMP` and via `gimp-console` from
+the command line both hung silently at 0% CPU. The app was freshly installed and
+quarantined, so I suspect a macOS first-run approval I couldn't see from a
+script, but I didn't confirm that. Restart GIMP after the plug-in installs, then *Filters → Development → Start Agent Bridge* in the open
 window (or have the agent call `gimp_launch(mode="headless")` and skip the
 window entirely). Register it with Claude Code:
 
@@ -497,8 +504,12 @@ is what I actually ran, as opposed to what I'm relaying from the vendors' docs:
   deliberately-broken run), the four `freecadcmd` behaviours in Step 4, the
   renderer, `doctor.sh`, `install.sh` (into a scratch directory), and
   `install-freecad-addon.sh` (with `--dest`, so nothing touched my real
-  FreeCAD). Not run today: the GIMP bridge, because this particular Mac doesn't
-  have GIMP or `uv` installed — `doctor.sh` says so.
+  FreeCAD). I also installed GIMP 3.2.6 and `uv` with the exact `brew` commands
+  from Step 0 (both worked), and `gimp-agent-mcp install-skills` ran fine. **Not
+  run today: the GIMP bridge itself.** GIMP would not start on this Mac (see
+  Step 7), so `install-plugin`, `doctor` and the live bridge never got a chance
+  — that part of Step 7 is the bridge's README plus my September sessions, not
+  something I reproduced this morning.
 - **2026-09-19, macOS, GIMP 3.2.6 + FreeCAD 1.1.3:** both bridges driven over
   stdio (`gimp-agent-mcp` 0.5.0, `freecad-mcp` 0.1.24), geometry read back and
   compared to hand-computed volume, headless and live-GUI paths agreeing.
