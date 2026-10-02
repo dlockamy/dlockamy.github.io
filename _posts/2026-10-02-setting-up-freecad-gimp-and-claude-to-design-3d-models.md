@@ -29,6 +29,12 @@ the example part this post walks through. I'll flag at the end exactly what I
 ran when, because a setup guide that doesn't say what was tested is just a
 rumor.
 
+This is the how-to companion to three earlier write-ups, which tell the stories
+rather than the steps: [install night for the two bridges](/posts/2026/09/20/two-mcp-bridges-a-mesh-repair-that-ate-a-letterform-and-204-clipped-labels-i-havent-fixed/),
+[the Dial's verification failures](/posts/2026/09/27/the-hole-that-removed-nothing-and-eighteen-screws-that-couldnt-reach/),
+and [the quarter-scale print that beat four verification passes](/posts/2026/09/27/a-phantom-collision-a-real-one-and-a-quarter-scale-print-that-beat-four-verification-passes/).
+I link to them rather than retell them.
+
 ---
 
 ## The shape of the system
@@ -226,10 +232,10 @@ The part has a missing hole and **every topology check is green**: one solid,
 valid, one shell, the right bounding box, fits the bed. A boolean cut whose tool
 sits entirely outside the part "succeeds" — it removes nothing and raises
 nothing. The only things that catch it are the checks that look at *features*
-and *volume*. This is the defect I've hit for real: a clearance hole whose
+and *volume*. This is a defect I've hit for real: a clearance hole whose
 centre landed a millimetre outside a part removed 0.00 mm³ and left a tiny nick
 in the corner instead of a hole, while solid count, validity and interference
-all passed.
+all passed ([the full story](/posts/2026/09/27/the-hole-that-removed-nothing-and-eighteen-screws-that-couldnt-reach/)).
 
 The exit code on that run is `1`. Which brings me to the thing that nearly made
 all of this pointless.
@@ -446,6 +452,9 @@ they don't:
 
 ### Prove it over stdio before you restart the client
 
+(This is the short version; the [install-night post](/posts/2026/09/20/two-mcp-bridges-a-mesh-repair-that-ate-a-letterform-and-204-clipped-labels-i-havent-fixed/)
+has what each check caught.)
+
 MCP config is read when the client starts, so you can't test a new bridge by
 calling its tools. Drive the server directly first: send `initialize`, then
 `notifications/initialized`, then `tools/list`, then a `tools/call`. It finds
@@ -475,10 +484,11 @@ clearance becomes 0.1 mm, below one extrusion width, and the parts fuse.
 
 **It checks the holes you thought of.** In the largest build I've used this on,
 the single most expensive defect was *18 of 25 fasteners specified with a screw
-that couldn't work* — some too short to span the gap at all. Four separate
-fastener checks existed and all of them passed, because every one modelled the
-**hole**, and none modelled the **screw** as an object with a length. A check
-suite is a statement about what you already worried about.
+that couldn't work*. Four separate fastener checks existed and all of them
+passed, because every one modelled the **hole**, and none modelled the **screw**
+as an object with a length. A check suite is a statement about what you already
+worried about — that [post](/posts/2026/09/27/the-hole-that-removed-nothing-and-eighteen-screws-that-couldnt-reach/)
+has the whole account.
 
 **Slicer orientation is a modelling decision.** A slicer treats one file as one
 rigid body with one orientation. A flat panel with four feet, exported as a
@@ -486,8 +496,9 @@ single file, forced supports across the entire underside of the panel — "nearl
 impossible to remove," in my own words after printing it. Anything that can't
 share an orientation with the rest of the part has to be its own file.
 
-**The first real print is still the real test.** The larger project this
-approach came out of, the [Dial Panel](https://github.com/slash-builder/hw-2015-dial-panel)
+**The first real print is still the real test.** (The [quarter-scale
+print post](/posts/2026/09/27/a-phantom-collision-a-real-one-and-a-quarter-scale-print-that-beat-four-verification-passes/)
+is about exactly that.) The larger project this approach came out of, the [Dial Panel](https://github.com/slash-builder/hw-2015-dial-panel)
 (a wall-mounted smart-home panel, generated from one parametric script and
 sliced plate by plate as a test), is labelled BETA in its own README for exactly
 this reason: all nine plates have been printed at least once and six are waiting
