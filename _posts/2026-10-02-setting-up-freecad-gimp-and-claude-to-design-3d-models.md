@@ -595,11 +595,16 @@ is what I actually ran, as opposed to what I'm relaying from the vendors' docs:
   FreeCAD with `--autostart` (RPC server up in ~12 s, addon 0.1.25 on FreeCAD
   1.0.2, `get_rpc_status` healthy), both bridges registered with `claude mcp add`
   and reporting Connected, and the plate-boss-bore volume matching the hand
-  calculation through both the live and headless paths. **Not run today:** the
-  *Filters → Development → Start Agent Bridge* menu path in a live GUI window (I
-  drove GIMP's headless mode, and didn't restart the GUI GIMP that was already
-  open), and the new tools in a fresh Claude Code session — registration takes
-  effect on restart.
+  calculation through both the live and headless paths. After restarting Claude
+  Code, both bridges' tools appeared as native tools in the session (no probe
+  script): `get_rpc_status` reported healthy; the repo's committed
+  `mount-plate.step` loaded into the live FreeCAD session read 24957.05 mm³
+  against 24957.05 computed by hand (1 solid, valid, 80 × 50 × 10 mm); and through
+  GIMP I opened the renderer's PNG, read the background pixel back as
+  `[18, 18, 20]`, and rendered FreeCAD's own viewport screenshot with a coordinate
+  grid overlay. **Not run today:** the *Filters → Development → Start Agent
+  Bridge* menu path in a live GUI window (I drove GIMP's headless mode, and
+  didn't restart the GUI GIMP that was already open).
 - **2026-09-19, macOS, GIMP 3.2.6 + FreeCAD 1.1.3:** both bridges driven over
   stdio (`gimp-agent-mcp` 0.5.0, `freecad-mcp` 0.1.24), geometry read back and
   compared to hand-computed volume, headless and live-GUI paths agreeing.
