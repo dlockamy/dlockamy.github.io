@@ -60,7 +60,7 @@ GIMP's bridge is the easy one: it has a real headless mode, and a pixel read bac
 
 ## New since the first version: from a drawing to a rigged model
 
-The same habits turned out to work on a different job: taking one generated image of a character to a skinned, rigged 3D model that plays animation clips in a web viewer. I did it twice, on a push-pop mascot and a humanoid. What carried over, and what didn't:
+The same habits turned out to work on a different job: taking one generated image of a character to a skinned, rigged 3D model that plays animation clips in a web viewer. I did it twice, on a push-up ice cream pop mascot and a humanoid. What carried over, and what didn't:
 
 - **The back is invented.** One front view nearly covers a revolve; for a humanoid, the depth and the whole back are guesses. Say so.
 - **Stills hide rig bugs.** Both rigs looked right from every angle and had joints that did nothing. The Khronos validator will pass a rig with a dead joint (the repo's example shows it: the deliberately broken tube gets 0 errors and 0 warnings), because valid and working are different claims. The repo now has a small `check_rig.py` that catches joints deforming nothing.

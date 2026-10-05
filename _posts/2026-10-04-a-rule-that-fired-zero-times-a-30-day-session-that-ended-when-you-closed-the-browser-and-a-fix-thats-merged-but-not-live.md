@@ -250,7 +250,7 @@ card) and any reasoning-tuned model.
   and [12](https://github.com/dlockamy/claude-cad-workbench/blob/main/docs/tutorial/12-check-the-rig.md)
   of the [tutorial](https://github.com/dlockamy/claude-cad-workbench/blob/main/docs/tutorial/README.md)
   in the public [`claude-cad-workbench`](https://github.com/dlockamy/claude-cad-workbench)
-  repo cover this; only the new part here. The push-pop mascot
+  repo cover this; only the new part here. The push-up pop mascot
   that stood on a 38 mm first layer now has a print variant with a flat 36
   mm base: its first layer is 2,944 mm of path, and supports add about 17%
   filament instead of about 60%. On the humanoid, the joint-influence check built after the mascot's dead spine and chest joints failed its very first run: both hand joints owned zero vertices. **Neither model has been
