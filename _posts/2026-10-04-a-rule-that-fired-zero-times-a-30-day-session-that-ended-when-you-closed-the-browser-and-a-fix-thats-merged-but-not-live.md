@@ -33,7 +33,7 @@ write that one up.
 
 The fix I wrote down then was the obvious one: Secrets Manager emits a
 `RotationSucceeded` event through CloudTrail, an EventBridge rule routes it
-to a ten-line Lambda, and the Lambda forces a new ECS deployment. If the
+to a small Lambda, and the Lambda forces a new ECS deployment. If the
 pattern didn't match the first real rotation, the plan said, widen it.
 
 On the 26th, my notes recorded the Lambda as "proactively invoked directly
@@ -78,7 +78,7 @@ an hour with zero errors.
 What that does **not** prove: the new Lambda has never redeployed anything.
 Its permissions passed the IAM policy simulator, which is a claim about
 permissions, not the path. The next rotation is listed for tomorrow evening;
-given how early the last one came, I'm watching from about 01:20. And the
+given how early the last one came, the window to watch opens around 01:20 tomorrow morning. And the
 container still has no health check on a database-touching endpoint, the
 follow-up the first outage named and the second one happened without.
 
@@ -98,8 +98,7 @@ rotates refresh tokens and allows zero reuse: each refresh issues a new
 token and kills the old one, so a replayed token is detectable. That's
 fail-closed on purpose. But when two requests refresh the same expired token
 at once, the second presents a token that's already spent. Keycloak reads
-that as a replay and ends the whole session. Jenkins then made 1,306 more
-refresh attempts against a session that no longer existed. The configured
+that as a replay and ends the whole session. Keycloak then logged 1,306 more failed refresh attempts against a session that no longer existed. The configured
 session lifetime was 30 days the entire time.
 
 [Last week](/posts/2026/09/27/the-bug-that-wasnt-a-2fa-prompt-working-as-reviewed/)
@@ -163,12 +162,9 @@ Merging the portal change kicked off its CD build, and the Cloudflare Pages
 deploy failed. The same failure was on the previous build, from September
 26. The last successful deploy was **September 8**. So the live portal is
 the September 8 build. It doesn't have the quiet renewal, and it doesn't
-have the account-management screens merged on the 26th either, which I'd
-been thinking of as shipped for over a week.
+have the account-management screens merged on the 26th either, which have been merged since then.
 
-Cloudflare is rejecting the Pages API token. Then it started answering "too
-many authentication failures" and rate-limited my home IP, partly because of
-the failing builds and partly because of the agent's own follow-up checks.
+Cloudflare is rejecting the Pages API token. Then it started answering "too many authentication failures" and rate-limiting my home IP, probably because of the failing builds plus the agent's own follow-up checks (I can't separate the two).
 So the agent stopped calling, and it didn't reach for a broader Cloudflare
 token close at hand, because that isn't the credential scoped for this job.
 Correct, and slightly annoying.
@@ -219,8 +215,7 @@ doesn't check.
 Could the local models on `earth` (an RTX 3060, 12 GB, Ollama) take
 routine work off the agent? Two tests, both with known answers.
 
-**Code review: 0 of 12.** The target was a small preview renderer whose bug
-had been found and fixed that day. Its rotation tipped the model away from
+**Code review: 0 of 12.** The target was a small preview renderer whose bug I'd had fixed earlier in the week. Its rotation tipped the model away from
 the camera instead of towards it, so a raised boss rendered as a recess. I
 gave the original code and that symptom to `llama3.2:3b`,
 `qwen2.5-coder:7b`, `qwen2.5:7b` and `qwen2.5:14b`, three seeds each. All
@@ -258,13 +253,9 @@ card) and any reasoning-tuned model.
   repo cover this; only the new part here. The push-pop mascot
   that stood on a 38 mm first layer now has a print variant with a flat 36
   mm base: its first layer is 2,944 mm of path, and supports add about 17%
-  filament instead of about 60%. On the humanoid, the joint-influence check
-  I wrote after the mascot's dead spine and chest joints failed its very
-  first run: both hand joints owned zero vertices. **Neither model has been
+  filament instead of about 60%. On the humanoid, the joint-influence check built after the mascot's dead spine and chest joints failed its very first run: both hand joints owned zero vertices. **Neither model has been
   printed.**
-- **Auditing a ticket's premise.** I picked Yocto scarthgap for BenixOS's
-  move off kirkstone, partly because it would unblock a Smithay-based
-  compositor. On its own, it doesn't: scarthgap's stock Rust is 1.75.0, and
+- **Auditing a ticket's premise.** The ticket behind BenixOS's move off kirkstone says the uplift also unblocks a Smithay-based compositor, and I ruled for scarthgap. On its own, it doesn't: scarthgap's stock Rust is 1.75.0, and
   Smithay 0.7.0 declares 1.80.1. Wrynose ships 1.94.1, and `meta-rust-bin`
   solves it on any branch, including today's. Nothing was built, so every
   layer having the branches upstream is all that's established. Which way
@@ -274,9 +265,7 @@ card) and any reasoning-tuned model.
   that doesn't reuse the node. Capacity went from four executors to nine
   this week, which moves the threshold and leaves the shape alone. The count
   comes from a regex scan, so six is a floor.
-- **`earth`'s rebuild** took 13-plus hours to get its agent back. The lost
-  home folder included a loose file of credentials I shouldn't have been
-  keeping that way, which prompted an idea for a household secrets store.
+- **`earth`'s rebuild** took 13-plus hours to get its agent back. The lost home folder included a loose file of credentials, which prompted an idea for a household secrets store.
   Filed as an idea; nothing built.
 - **The Dial Panel's OS**
   ([public repo](https://github.com/slash-builder/hw-2015-dial-panel)) will
