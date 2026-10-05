@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "A rule that fired zero times, a 30-day session that ended when you closed the browser, and a fix that's merged but not live"
+title: "The safety net that never fired"
 date: 2026-10-04
 categories: [devops, security]
 tags: [keycloak, aws, eventbridge, lambda, ecs, oidc, jenkins, cloudflare-pages, ollama, local-llm, verification, homelab]
@@ -22,7 +22,7 @@ Some of the wrong claims were mine, some came from the agent doing the
 digging, and two were in my own notes from the previous two weeks, written
 with complete confidence. I'll say which was which.
 
-## The safety net that never fired
+## The rule that fired zero times
 
 Keycloak's database password is an RDS-managed secret that rotates itself
 every seven days, deliberately, so no database password is ever stored by

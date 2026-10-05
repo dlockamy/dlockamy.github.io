@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "One drawing nearly covered the mascot, the humanoid's back is invented, and both rigs had joints that moved nothing"
+title: "Giving two generated characters a skeleton"
 date: 2026-10-05
 categories: [hardware, tooling]
 tags: [3d, freecad, blender, gltf, three-js, rigging, image-generation, z-image, verification, 3d-printing]
