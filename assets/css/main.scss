@@ -552,6 +552,9 @@ a:hover { @include text-glow($teal); }
 
     p { margin-bottom: 1rem; }
 
+    // Images never wider than the column (a 1200 px comparison image was running off the right edge and cutting the model half off).
+    img { display: block; max-width: 100%; height: auto; margin: 1.25rem 0; }
+
     code {
       background: $panel; border: 1px solid $border;
       padding: 0.1em 0.4em; border-radius: 2px;
