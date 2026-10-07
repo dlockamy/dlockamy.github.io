@@ -1,0 +1,100 @@
+# Cross-post NEW blog posts to LinkedIn, Bluesky and X.
+# Opt-in per post (front matter `syndicate: true` or a list). See .github/SYNDICATION.md.
+#
+# One job per (post, platform), so a failure on one platform can be re-run from the
+# Actions page ("Re-run failed jobs") without re-posting the others. A platform whose
+# secrets are not set is skipped with a warning, so this is safe before any token exists.
+name: Syndicate new posts
+
+on:
+  push:
+    branches: [master]
+    paths: ["_posts/**"]
+  workflow_dispatch:
+    inputs:
+      post:
+        description: "Path of an existing post, e.g. _posts/2026-10-05-some-post.md"
+        required: true
+      platforms:
+        description: "Comma list: linkedin,bluesky,x (blank = every platform)"
+        required: false
+        default: ""
+      dry_run:
+        description: "Dry run: show exactly what would be posted, post nothing"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    if: github.repository == 'dlockamy/dlockamy.github.io'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.d.outputs.matrix }}
+      any: ${{ steps.d.outputs.any }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: .github/syndicate/requirements.txt
+      - run: pip install -r .github/syndicate/requirements.txt
+      - name: Work out which posts to syndicate
+        id: d
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+          POST: ${{ inputs.post }}
+          PLATFORMS: ${{ inputs.platforms }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            python .github/syndicate/syndicate.py detect --post "$POST" --platforms "$PLATFORMS"
+          else
+            python .github/syndicate/syndicate.py detect --before "$BEFORE" --after "$AFTER"
+          fi
+
+  post:
+    needs: detect
+    if: needs.detect.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.detect.outputs.matrix) }}
+    # Never two runs for the same post and platform at once.
+    concurrency:
+      group: syndicate-${{ matrix.platform }}-${{ matrix.post }}
+      cancel-in-progress: false
+    name: ${{ matrix.platform }}, ${{ matrix.title }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: .github/syndicate/requirements.txt
+      - run: pip install -r .github/syndicate/requirements.txt
+      - name: Post (waits for the page to be live first)
+        env:
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
+          LINKEDIN_VERSION: ${{ vars.LINKEDIN_VERSION }}
+          BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
+          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+          SYNDICATE_DISCLOSE_AI: ${{ vars.SYNDICATE_DISCLOSE_AI }}
+          POST: ${{ matrix.post }}
+          PLATFORM: ${{ matrix.platform }}
+          DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          args=(--post "$POST" --platform "$PLATFORM" --wait-live 900)
+          if [ "$DRY" = "true" ]; then args+=(--dry-run); fi
+          python .github/syndicate/syndicate.py post "${args[@]}"
