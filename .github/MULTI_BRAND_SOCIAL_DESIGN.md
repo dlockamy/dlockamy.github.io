@@ -1,3 +1,6 @@
+> **Superseded for dlockamy.com (2026-10-06).** The implemented, single-brand version is described in
+> [`SYNDICATION.md`](SYNDICATION.md). This three-brand design was never installed; it is kept for reference.
+
 # Multi-Brand Social Media Posting System
 
 ## Architecture Overview
