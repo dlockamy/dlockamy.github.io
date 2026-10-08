@@ -1,11 +1,12 @@
 # Cross-posting new blog posts
 
-When a new post is pushed to `master`, a GitHub Action can share it to **LinkedIn**, **Bluesky** and **X**.
+When a new post is pushed to `master`, a GitHub Action can share it to **LinkedIn**, **Bluesky**, **Mastodon** and **X**.
 It supersedes the three-brand design in `MULTI_BRAND_SOCIAL_DESIGN.md` for this site: one blog, one
 author, no `brands/` folder, no migration of existing posts.
 
-**Status:** built and tested offline; **not yet run against the live APIs**, and no credentials are set,
-so today every platform skips itself with a warning. Follow "Turning it on" below.
+**Status (2026-10-08):** LinkedIn and Bluesky credentials are set and verified from inside GitHub Actions; a
+dry-run of each works. Mastodon is built and tested against fakes. X has no credentials. A platform without
+credentials skips itself with a warning. Nothing has been posted for real yet. Follow "Turning it on" below.
 
 ## Opting a post in
 
@@ -13,10 +14,11 @@ Nothing is posted unless the post asks for it, in its front matter:
 
 ```yaml
 syndicate: true                      # every platform that has credentials
-syndicate: [linkedin, bluesky]       # or just these (x, or twitter, also works)
+syndicate: [linkedin, bluesky]       # or just these (mastodon; x, or twitter, also work)
 social:                              # optional: your own wording per platform
   linkedin: "Text for LinkedIn"
   bluesky: "Text for Bluesky (300 characters)"
+  mastodon: "Text for Mastodon (the link is added for you)"
   x: "Text for X (the link is added for you)"
 ```
 
@@ -73,6 +75,19 @@ never enters your shell history). Do **Bluesky** first: it is the simplest and a
 6. LinkedIn retires API versions about a year after release. If posts start failing with 426, set the repository
    variable `LINKEDIN_VERSION` to a current `YYYYMM` (the default is `202609`).
 
+### Mastodon (free, **the token does not expire**)
+1. Pick a server and make an account (tech-focused ones such as `hachyderm.io` or `fosstodon.org` suit this blog;
+   some need an application or approval, so allow time). A fresh account has no history to look like spam.
+2. On your server: **Preferences → Development → New application**. Name it `dlockamy-blog-github`. Tick
+   **only** `write:statuses` and untick everything else (the defaults are broader). Save.
+3. Open the new application and copy **Your access token** (not the client key or secret).
+4. Secrets: `MASTODON_INSTANCE` (just the host, e.g. `hachyderm.io`) and `MASTODON_ACCESS_TOKEN`.
+5. Optional repository variable `MASTODON_VISIBILITY`: `public` (default), `unlisted`, `private` or `direct`.
+6. Notes: the post's character limit and URL length are read from your server (usually 500, URL counted as 23).
+   Mastodon builds its link card from the post page's Open Graph tags, which the blog now emits.
+   The request carries an `Idempotency-Key`, so re-running a job within about an hour cannot duplicate the post.
+   The weekly check confirms the token is still valid without needing any extra scope.
+
 ### X (costs money, **pay per post**)
 1. X developer console → create a project and app. Set the app's permission to **Read and Write**.
 2. Generate **API Key / Secret** and **Access Token / Secret** *after* setting Read and Write (tokens made
@@ -86,7 +101,7 @@ never enters your shell history). Do **Bluesky** first: it is the simplest and a
 ### First live test, in this order
 1. Actions → **Syndicate new posts** → Run workflow, an old post, `platforms: bluesky`, **Dry run on**. Read the log.
 2. Same again with Dry run off, `platforms: bluesky`. Look at the result on Bluesky.
-3. Repeat for `linkedin`, then `x`.
+3. Repeat for `linkedin`, then `mastodon`, then `x`.
 4. Add `syndicate: true` to the next real post.
 
 ## Known unknowns (honest list)
@@ -96,6 +111,7 @@ conservatively), the X host `api.x.com`, and a LinkedIn link card without a thum
 not scrape the URL, so the card is text only; adding a thumbnail needs LinkedIn's Images API).
 
 ## Files
+Pages also carry Open Graph tags (`_layouts/default.html`), so shared links get a proper card.
 `workflows/syndicate.yml` posts. `workflows/syndicate-token-check.yml` weekly health check.
 `workflows/syndicate-tests.yml` runs the tests on changes. `syndicate/syndicate.py` the script,
 `syndicate/linkedin_auth.py` the LinkedIn authorization helper, `syndicate/test_syndicate.py` the tests.

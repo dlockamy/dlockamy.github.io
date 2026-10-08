@@ -1,4 +1,4 @@
-# Weekly: is the LinkedIn token about to expire, and do the Bluesky credentials still work?
+# Weekly: is the LinkedIn token about to expire, and do the Bluesky and Mastodon credentials still work?
 # LinkedIn gives self-serve apps a 60-day token and no refresh token, so a human has to
 # re-run .github/syndicate/linkedin_auth.py. This opens an issue before it lapses.
 # Nothing is checked until the secrets exist, and X is never called (it bills per request).
@@ -33,6 +33,8 @@ jobs:
           LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
           BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+          MASTODON_INSTANCE: ${{ secrets.MASTODON_INSTANCE }}
+          MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
         run: |
           set +e
           python .github/syndicate/syndicate.py check-tokens --report problems.md
