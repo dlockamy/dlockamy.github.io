@@ -1,11 +1,11 @@
 # Cross-posting new blog posts
 
-When a new post is pushed to `master`, a GitHub Action can share it to **LinkedIn**, **Bluesky**, **Mastodon** and **X**.
+When a new post is pushed to `master`, a GitHub Action can share it to **LinkedIn**, **Bluesky** and **Mastodon**.
 It supersedes the three-brand design in `MULTI_BRAND_SOCIAL_DESIGN.md` for this site: one blog, one
 author, no `brands/` folder, no migration of existing posts.
 
 **Status (2026-10-08):** LinkedIn and Bluesky credentials are set and verified from inside GitHub Actions; a
-dry-run of each works. Mastodon is built and tested against fakes. X has no credentials. A platform without
+dry-run of each works, and Mastodon is set up. A platform without
 credentials skips itself with a warning. Nothing has been posted for real yet. Follow "Turning it on" below.
 
 ## Opting a post in
@@ -14,12 +14,11 @@ Nothing is posted unless the post asks for it, in its front matter:
 
 ```yaml
 syndicate: true                      # every platform that has credentials
-syndicate: [linkedin, bluesky]       # or just these (mastodon; x, or twitter, also work)
+syndicate: [linkedin, bluesky]       # or just these
 social:                              # optional: your own wording per platform
   linkedin: "Text for LinkedIn"
   bluesky: "Text for Bluesky (300 characters)"
   mastodon: "Text for Mastodon (the link is added for you)"
-  x: "Text for X (the link is added for you)"
 ```
 
 Only **new** files in `_posts/` trigger it. Editing an old post never re-posts it.
@@ -88,26 +87,23 @@ never enters your shell history). Do **Bluesky** first: it is the simplest and a
    The request carries an `Idempotency-Key`, so re-running a job within about an hour cannot duplicate the post.
    The weekly check confirms the token is still valid without needing any extra scope.
 
-### X (costs money, **pay per post**)
-1. X developer console → create a project and app. Set the app's permission to **Read and Write**.
-2. Generate **API Key / Secret** and **Access Token / Secret** *after* setting Read and Write (tokens made
-   before the change stay read-only; regenerate them).
-3. The API has no free tier for new developers. It is pay-per-use: buy credits in the console. Third-party
-   pricing pages (checked 2026-10-06, **verify in the console**) put a post at about $0.015, or about **$0.20 when
-   it contains a link**, which every one of these does. Roughly $1 a month at one post a week.
-4. Secrets: `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET`.
-   The weekly check never calls X, because every call spends credits.
-
 ### First live test, in this order
 1. Actions → **Syndicate new posts** → Run workflow, an old post, `platforms: bluesky`, **Dry run on**. Read the log.
 2. Same again with Dry run off, `platforms: bluesky`. Look at the result on Bluesky.
-3. Repeat for `linkedin`, then `mastodon`, then `x`.
+3. Repeat for `mastodon`, then `linkedin`.
 4. Add `syndicate: true` to the next real post.
+
+## Ruled out
+**X / Twitter is officially ruled out** (DJ, 2026-10-08). The account is dormant, the API has no free tier and
+bills per post (about $0.20 with a link, per third-party pricing pages), and the audience for this blog has largely
+moved to Bluesky and Mastodon. The integration was built, then removed. A post that still says `syndicate: [x]` or
+`[twitter]` fails with "unknown syndication platform" instead of being skipped silently. Meta (Facebook,
+Instagram, Threads) is not supported either, for the same dormant-account reason. Reddit is manual only.
 
 ## Known unknowns (honest list)
 Everything is tested against fakes that mirror each platform's documented request shape. Not yet confirmed
 against the live services: LinkedIn API version `202609` and its title/description length limits (set
-conservatively), the X host `api.x.com`, and a LinkedIn link card without a thumbnail image (the Posts API does
+conservatively) and a LinkedIn link card without a thumbnail image (the Posts API does
 not scrape the URL, so the card is text only; adding a thumbnail needs LinkedIn's Images API).
 
 ## Files

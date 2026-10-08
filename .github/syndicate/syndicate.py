@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cross-post NEW dlockamy.com blog posts to LinkedIn, Bluesky, Mastodon and X.
+"""Cross-post NEW dlockamy.com blog posts to LinkedIn, Bluesky and Mastodon.
 
 Opt-in per post, in the post's front matter:
 
@@ -42,15 +42,14 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 SITE_URL = os.environ.get("SYNDICATE_SITE_URL", "https://dlockamy.com").rstrip("/")
-PLATFORMS = ("linkedin", "bluesky", "mastodon", "x")
-ALIASES = {"twitter": "x"}
+PLATFORMS = ("linkedin", "bluesky", "mastodon")
+ALIASES: dict = {}  # no aliases today; an unknown platform name is an error, not a silent skip
 
 # LinkedIn rotates API versions (YYYYMM) and sunsets old ones after about a year.
 # Override with the LINKEDIN_VERSION repository variable; a 426 means this one is gone.
 LINKEDIN_VERSION_DEFAULT = "202609"
 LINKEDIN_API = "https://api.linkedin.com"
 BLUESKY_PDS_DEFAULT = "https://bsky.social"
-X_API_DEFAULT = "https://api.x.com"
 
 # Mastodon limits differ per server; these are only the fallback when /api/v2/instance cannot be read.
 MASTODON_MAX_DEFAULT = 500
@@ -63,15 +62,13 @@ LINKEDIN_COMMENTARY_MAX = 3000
 LINKEDIN_TITLE_MAX = 190
 LINKEDIN_DESC_MAX = 250
 BLUESKY_TEXT_MAX = 300  # graphemes; counting code points is a safe upper bound
-X_TEXT_MAX = 280  # weighted; a URL always counts 23
-X_URL_WEIGHT = 23
 
 AI_NOTE_DEFAULT = "Drafted with AI assistance."
 
 
 _SECRET_KEYS = (
     "LINKEDIN_ACCESS_TOKEN", "LINKEDIN_CLIENT_SECRET", "BLUESKY_APP_PASSWORD",
-    "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET", "X_API_KEY", "MASTODON_ACCESS_TOKEN",
+    "MASTODON_ACCESS_TOKEN",
 )
 
 
@@ -220,15 +217,6 @@ def escape_little(text: str) -> str:
     return "".join("\\" + c if c in _LITTLE_RESERVED else c for c in text)
 
 
-def x_weight(text: str) -> int:
-    """X's weighted length: most Latin text is 1, everything else (CJK, emoji) is 2."""
-    w = 0
-    for c in text:
-        cp = ord(c)
-        w += 1 if (cp <= 0x10FF or 0x2000 <= cp <= 0x200D or 0x2010 <= cp <= 0x201F or 0x2032 <= cp <= 0x2037) else 2
-    return w
-
-
 def _ai_note(p: Post) -> str:
     if p.ai_assisted and os.environ.get("SYNDICATE_DISCLOSE_AI", "1") not in ("0", "false", "no"):
         return os.environ.get("SYNDICATE_AI_NOTE", AI_NOTE_DEFAULT)
@@ -300,29 +288,6 @@ def compose_bluesky_record(p: Post, now: Optional[dt.datetime] = None) -> dict:
     }
 
 
-def compose_x_text(p: Post) -> str:
-    """Title, then as much excerpt as fits, then the AI note (if on), then the URL (always 23)."""
-    if "x" in p.overrides:
-        body = p.overrides["x"]
-        return body if p.url in body else f"{body}\n{p.url}"
-    note = _ai_note(p)
-    tail = f"\n\n{note}" if note else ""
-    budget = X_TEXT_MAX - X_URL_WEIGHT - 1 - x_weight(tail)  # 1 = the newline before the URL
-    text = p.title
-    if x_weight(text) > budget:
-        text = truncate(p.title, budget // 2)
-        while x_weight(text) > budget:
-            text = truncate(text, len(text) - 2)
-    elif p.excerpt:
-        extra_budget = budget - x_weight(text) - 2  # blank line between title and excerpt
-        if extra_budget > 40:
-            extra = truncate(p.excerpt, extra_budget)
-            while x_weight(extra) > extra_budget and len(extra) > 1:
-                extra = truncate(extra, len(extra) - 2)
-            text = f"{text}\n\n{extra}"
-    return f"{text}{tail}\n{p.url}"
-
-
 def mastodon_length(text: str, url: str, url_len: int) -> int:
     """Mastodon counts every URL as a fixed length, whatever it really is."""
     return len(text.replace(url, "")) + (url_len if url in text else 0)
@@ -338,10 +303,6 @@ def compose_mastodon_text(p: Post, max_chars: int = MASTODON_MAX_DEFAULT, url_le
     head = p.title if not p.excerpt else f"{p.title}\n\n{p.excerpt}"
     room = max_chars - url_len - 2 - len(tail)  # 2 = the blank line before the URL
     return f"{truncate(head, max(room, 1))}{tail}\n\n{p.url}"
-
-
-def x_text_weight(text: str, url: str) -> int:
-    return x_weight(text.replace(url, "")) + (X_URL_WEIGHT if url in text else 0)
 
 
 # ------------------------------------------------------------------------------ http
@@ -440,24 +401,6 @@ def post_bluesky(p: Post, env, http, sleep=time.sleep) -> str:
     return r.json().get("uri", "(created)")
 
 
-def post_x(p: Post, env, http, sleep=time.sleep) -> str:
-    from requests_oauthlib import OAuth1
-
-    text = compose_x_text(p)
-    if x_text_weight(text, p.url) > X_TEXT_MAX:
-        raise PostError(f"X text is {x_text_weight(text, p.url)} weighted characters, over {X_TEXT_MAX}")
-    auth = OAuth1(env["X_API_KEY"], env["X_API_SECRET"], env["X_ACCESS_TOKEN"], env["X_ACCESS_SECRET"])
-    base = (env.get("X_API_BASE") or X_API_DEFAULT).rstrip("/")
-    resp = _send(http, "post", f"{base}/2/tweets", sleep=sleep, auth=auth, json={"text": text})
-    if resp.status_code in (200, 201):
-        return (resp.json().get("data") or {}).get("id", "(created)")
-    hint = {
-        401: "X rejected the keys: check the four X_* secrets and that the app has Read and Write permission",
-        402: "X reports no API credits: top up in the developer console (the API is pay-per-use)",
-        403: "X refused the post: app permissions, a duplicate post, or no credits",
-    }.get(resp.status_code, "")
-    raise PostError(redact(f"X HTTP {resp.status_code}: {hint or _snippet(resp)}", env))
-
 
 def mastodon_base(instance: str) -> str:
     """`hachyderm.io` or `https://hachyderm.io/` -> `https://hachyderm.io`. Nothing else is accepted."""
@@ -514,12 +457,11 @@ def post_mastodon(p: Post, env, http, sleep=time.sleep) -> str:
     raise PostError(redact(f"Mastodon HTTP {resp.status_code}: {hint or _snippet(resp)}", env))
 
 
-CLIENTS = {"linkedin": post_linkedin, "bluesky": post_bluesky, "mastodon": post_mastodon, "x": post_x}
+CLIENTS = {"linkedin": post_linkedin, "bluesky": post_bluesky, "mastodon": post_mastodon}
 REQUIRED = {
     "linkedin": ("LINKEDIN_ACCESS_TOKEN", "LINKEDIN_PERSON_URN"),
     "bluesky": ("BLUESKY_HANDLE", "BLUESKY_APP_PASSWORD"),
     "mastodon": ("MASTODON_INSTANCE", "MASTODON_ACCESS_TOKEN"),
-    "x": ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET"),
 }
 
 
@@ -640,8 +582,7 @@ def _preview_payload(p: Post, platform: str) -> dict:
         t = compose_mastodon_text(p)
         return {"status": t, "visibility": "public", "length": mastodon_length(t, p.url, MASTODON_URL_LEN_DEFAULT),
                 "limit": MASTODON_MAX_DEFAULT}
-    text = compose_x_text(p)
-    return {"text": text, "weighted_length": x_text_weight(text, p.url), "limit": X_TEXT_MAX}
+    raise ValueError(f"unknown platform {platform!r}")
 
 
 def cmd_preview(a) -> int:
@@ -654,8 +595,6 @@ def cmd_preview(a) -> int:
     print(f"\n--- Bluesky ({len(bt)}/{BLUESKY_TEXT_MAX})\n{bt}")
     mt = compose_mastodon_text(p)
     print(f"\n--- Mastodon ({mastodon_length(mt, p.url, MASTODON_URL_LEN_DEFAULT)}/{MASTODON_MAX_DEFAULT}; the server's own limit is used when posting)\n{mt}")
-    xt = compose_x_text(p)
-    print(f"\n--- X ({x_text_weight(xt, p.url)}/{X_TEXT_MAX} weighted)\n{xt}")
     return 0
 
 
@@ -720,7 +659,6 @@ def cmd_check_tokens(a, env=None, http=None) -> int:
             lines.append("mastodon: MISCONFIGURED")
     else:
         lines.append("mastodon: not configured")
-    lines.append("x: not checked (any call spends pay-per-use credits)")
     print("\n".join(lines))
     for ln in lines:
         summary(f"- {ln}")

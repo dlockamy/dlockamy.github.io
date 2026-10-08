@@ -81,7 +81,7 @@ class ParsingTests(unittest.TestCase):
         self.assertEqual(p.title, "Giving two generated characters a skeleton")
         self.assertEqual(p.url, "https://dlockamy.com/posts/2026/10/05/giving-a-skeleton/")
         self.assertTrue(p.ai_assisted)
-        self.assertEqual(p.syndicate, {"linkedin", "bluesky", "mastodon", "x"})
+        self.assertEqual(p.syndicate, {"linkedin", "bluesky", "mastodon"})
 
     def test_excerpt_markdown_is_flattened(self):
         p = s.parse_post("_posts/2026-10-05-x.md", text=POST_TEXT)
@@ -107,9 +107,15 @@ class ParsingTests(unittest.TestCase):
     def test_syndicate_values(self):
         self.assertIsNone(mkpost().syndicate)
         self.assertIsNone(mkpost("syndicate: false\n").syndicate)
-        self.assertEqual(mkpost("syndicate: [linkedin, twitter]\n").syndicate, {"linkedin", "x"})
+        self.assertEqual(mkpost("syndicate: [linkedin, bluesky]\n").syndicate, {"linkedin", "bluesky"})
         self.assertEqual(mkpost("syndicate: [mastodon]\n").syndicate, {"mastodon"})
         self.assertEqual(mkpost("syndicate: bluesky\n").syndicate, {"bluesky"})
+
+    def test_x_twitter_is_ruled_out_so_asking_for_it_is_an_error(self):
+        # DJ, 2026-10-08: X/Twitter is officially ruled out. A post that still says so must fail loudly.
+        for name in ("x", "twitter", "X"):
+            with self.assertRaises(ValueError, msg=name):
+                mkpost(f"syndicate: [{name}]\n")
 
     def test_unknown_platform_is_an_error_not_a_silent_skip(self):
         with self.assertRaises(ValueError):
@@ -134,11 +140,6 @@ class TextTests(unittest.TestCase):
         self.assertTrue(out.endswith("…"))
         self.assertNotIn("gam", out)
         self.assertEqual(s.truncate("short", 50), "short")
-
-    def test_x_weight(self):
-        self.assertEqual(s.x_weight("abc"), 3)
-        self.assertEqual(s.x_weight("日本"), 4)
-        self.assertEqual(s.x_weight("🙂"), 2)
 
 
 class ComposeTests(unittest.TestCase):
@@ -173,7 +174,6 @@ class ComposeTests(unittest.TestCase):
         try:
             self.assertNotIn("AI assistance", s.compose_linkedin(mkpost())["commentary"])
             self.assertNotIn("AI assistance", s.compose_bluesky_text(mkpost()))
-            self.assertNotIn("AI assistance", s.compose_x_text(mkpost()))
         finally:
             os.environ.pop("SYNDICATE_DISCLOSE_AI", None) if old is None else os.environ.__setitem__("SYNDICATE_DISCLOSE_AI", old)
 
@@ -181,7 +181,6 @@ class ComposeTests(unittest.TestCase):
         p = mkpost(ai=False)
         self.assertNotIn("AI assistance", s.compose_linkedin(p)["commentary"])
         self.assertNotIn("AI assistance", s.compose_bluesky_text(p))
-        self.assertNotIn("AI assistance", s.compose_x_text(p))
 
     def test_bluesky_text_within_limit_and_keeps_the_note(self):
         p = mkpost(excerpt="word " * 200)
@@ -196,18 +195,10 @@ class ComposeTests(unittest.TestCase):
         self.assertEqual(rec["embed"]["$type"], "app.bsky.embed.external")
         self.assertEqual(rec["embed"]["external"]["uri"], mkpost().url)
 
-    def test_x_text_fits_with_the_url_counted_as_23(self):
-        for ex in ("short", "word " * 300, "日本語 " * 120):
-            p = mkpost(excerpt=ex, title="T " * 60)
-            t = s.compose_x_text(p)
-            self.assertLessEqual(s.x_text_weight(t, p.url), s.X_TEXT_MAX, ex[:10])
-            self.assertTrue(t.endswith(p.url))
-
     def test_per_platform_overrides_win(self):
-        p = mkpost("social:\n  linkedin: 'Custom (LI)'\n  bluesky: 'Custom BS'\n  twitter: 'Custom X'\n")
+        p = mkpost("social:\n  linkedin: 'Custom (LI)'\n  bluesky: 'Custom BS'\n")
         self.assertEqual(s.compose_linkedin(p)["commentary"], "Custom \\(LI\\)")
         self.assertEqual(s.compose_bluesky_text(p), "Custom BS")
-        self.assertEqual(s.compose_x_text(p), f"Custom X\n{p.url}")
 
 
 class LinkedInTests(unittest.TestCase):
@@ -301,26 +292,6 @@ class BlueskyTests(unittest.TestCase):
         self.assertEqual(len(http.calls), 1)
         self.assertNotIn("app-pass-SECRET", str(cm.exception).replace("app password", ""))
 
-
-class XTests(unittest.TestCase):
-    ENV = {"X_API_KEY": "k", "X_API_SECRET": "ks", "X_ACCESS_TOKEN": "t", "X_ACCESS_SECRET": "ts"}
-
-    def test_posts_with_oauth1_user_auth(self):
-        from requests_oauthlib import OAuth1
-
-        http = FakeHttp(Resp(201, {"data": {"id": "123"}}))
-        self.assertEqual(s.post_x(mkpost(), self.ENV, http, sleep=NOSLEEP), "123")
-        _, url, kw = http.calls[0]
-        self.assertEqual(url, "https://api.x.com/2/tweets")
-        self.assertIsInstance(kw["auth"], OAuth1)
-        self.assertIn(mkpost().url, kw["json"]["text"])
-
-    def test_no_credits_gets_a_clear_message_and_is_not_retried(self):
-        http = FakeHttp(Resp(402), Resp(201))
-        with self.assertRaises(s.PostError) as cm:
-            s.post_x(mkpost(), self.ENV, http, sleep=NOSLEEP)
-        self.assertIn("credits", str(cm.exception))
-        self.assertEqual(len(http.calls), 1)
 
 
 class CommandTests(unittest.TestCase):
