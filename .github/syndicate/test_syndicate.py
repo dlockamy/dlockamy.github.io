@@ -81,7 +81,7 @@ class ParsingTests(unittest.TestCase):
         self.assertEqual(p.title, "Giving two generated characters a skeleton")
         self.assertEqual(p.url, "https://dlockamy.com/posts/2026/10/05/giving-a-skeleton/")
         self.assertTrue(p.ai_assisted)
-        self.assertEqual(p.syndicate, {"linkedin", "bluesky", "x"})
+        self.assertEqual(p.syndicate, {"linkedin", "bluesky", "mastodon", "x"})
 
     def test_excerpt_markdown_is_flattened(self):
         p = s.parse_post("_posts/2026-10-05-x.md", text=POST_TEXT)
@@ -108,11 +108,12 @@ class ParsingTests(unittest.TestCase):
         self.assertIsNone(mkpost().syndicate)
         self.assertIsNone(mkpost("syndicate: false\n").syndicate)
         self.assertEqual(mkpost("syndicate: [linkedin, twitter]\n").syndicate, {"linkedin", "x"})
+        self.assertEqual(mkpost("syndicate: [mastodon]\n").syndicate, {"mastodon"})
         self.assertEqual(mkpost("syndicate: bluesky\n").syndicate, {"bluesky"})
 
     def test_unknown_platform_is_an_error_not_a_silent_skip(self):
         with self.assertRaises(ValueError):
-            mkpost("syndicate: [mastodon]\n")
+            mkpost("syndicate: [myspace]\n")
 
     def test_every_real_post_parses_and_urls_are_unique(self):
         posts = [s.parse_post(f) for f in sorted(glob.glob(str(REPO / "_posts" / "*.md")))]
@@ -436,6 +437,112 @@ class TokenCheckTests(unittest.TestCase):
     def test_a_revoked_bluesky_password_needs_attention(self):
         env = {"BLUESKY_HANDLE": "h", "BLUESKY_APP_PASSWORD": "p"}
         self.assertEqual(self._check(env, FakeHttp(Resp(401))), 2)
+
+
+class MastodonTests(unittest.TestCase):
+    ENV = {"MASTODON_INSTANCE": "hachyderm.io", "MASTODON_ACCESS_TOKEN": "MASTO-SECRET-TOKEN"}
+    INSTANCE_OK = Resp(200, {"configuration": {"statuses": {"max_characters": 500, "characters_reserved_per_url": 23}}})
+
+    def test_instance_normalisation(self):
+        for raw in ("hachyderm.io", "https://hachyderm.io", "https://HACHYDERM.io/", "  hachyderm.io  "):
+            self.assertEqual(s.mastodon_base(raw), "https://hachyderm.io")
+        self.assertEqual(s.mastodon_base("https://social.example:8443"), "https://social.example:8443")
+
+    def test_instance_rejects_anything_that_is_not_a_plain_https_host(self):
+        for bad in ("", "http://hachyderm.io", "https://hachyderm.io/path", "https://user:pw@hachyderm.io",
+                    "https://hachyderm.io?x=1", "localhost", "https://exa mple.com", "file:///etc/passwd"):
+            with self.assertRaises(s.PostError, msg=bad):
+                s.mastodon_base(bad)
+
+    def test_text_fits_with_the_url_counted_as_23_whatever_its_length(self):
+        for ex in ("short", "word " * 400, "日本語 " * 200):
+            p = mkpost(excerpt=ex)
+            t = s.compose_mastodon_text(p, 500, 23)
+            self.assertLessEqual(s.mastodon_length(t, p.url, 23), 500, ex[:8])
+            self.assertTrue(t.endswith(p.url))
+        self.assertIn("Drafted with AI assistance.", s.compose_mastodon_text(mkpost(excerpt="word " * 400), 500, 23))
+
+    def test_a_smaller_server_limit_is_respected(self):
+        p = mkpost(excerpt="word " * 400)
+        self.assertLessEqual(s.mastodon_length(s.compose_mastodon_text(p, 300, 23), p.url, 23), 300)
+
+    def test_override_wins_and_gets_the_url(self):
+        p = mkpost("social:\n  mastodon: 'My own words'\n")
+        self.assertEqual(s.compose_mastodon_text(p), f"My own words\n\n{p.url}")
+
+    def test_posts_with_the_right_request_and_returns_the_status_url(self):
+        http = FakeHttp(self.INSTANCE_OK, Resp(200, {"id": "1", "url": "https://hachyderm.io/@dlockamy/1"}))
+        ident = s.post_mastodon(mkpost(), self.ENV, http, sleep=NOSLEEP)
+        self.assertEqual(ident, "https://hachyderm.io/@dlockamy/1")
+        (_, u1, _), (_, u2, kw) = http.calls
+        self.assertEqual(u1, "https://hachyderm.io/api/v2/instance")
+        self.assertEqual(u2, "https://hachyderm.io/api/v1/statuses")
+        self.assertEqual(kw["headers"]["Authorization"], "Bearer MASTO-SECRET-TOKEN")
+        self.assertEqual(kw["json"]["visibility"], "public")
+        self.assertEqual(kw["json"]["language"], "en")
+        self.assertIn(mkpost().url, kw["json"]["status"])
+
+    def test_the_idempotency_key_is_stable_per_post_and_differs_between_posts(self):
+        def key(p):
+            http = FakeHttp(self.INSTANCE_OK, Resp(200, {"id": "1"}))
+            s.post_mastodon(p, self.ENV, http, sleep=NOSLEEP)
+            return http.calls[1][2]["headers"]["Idempotency-Key"]
+        a1, a2 = key(mkpost()), key(mkpost())
+        b = key(mkpost(date="2026-10-06"))
+        self.assertEqual(a1, a2)
+        self.assertNotEqual(a1, b)
+
+    def test_uses_the_servers_own_character_limit(self):
+        small = Resp(200, {"configuration": {"statuses": {"max_characters": 300, "characters_reserved_per_url": 23}}})
+        http = FakeHttp(small, Resp(200, {"id": "1"}))
+        s.post_mastodon(mkpost(excerpt="word " * 400), self.ENV, http, sleep=NOSLEEP)
+        sent = http.calls[1][2]["json"]["status"]
+        self.assertLessEqual(s.mastodon_length(sent, mkpost().url, 23), 300)
+
+    def test_falls_back_to_defaults_if_the_instance_endpoint_is_unreadable(self):
+        http = FakeHttp(Resp(500), Resp(200, {"id": "1"}))
+        s.post_mastodon(mkpost(), self.ENV, http, sleep=NOSLEEP)
+        self.assertEqual(len(http.calls), 2)
+
+    def test_visibility_is_validated_and_configurable(self):
+        http = FakeHttp(self.INSTANCE_OK, Resp(200, {"id": "1"}))
+        s.post_mastodon(mkpost(), {**self.ENV, "MASTODON_VISIBILITY": "unlisted"}, http, sleep=NOSLEEP)
+        self.assertEqual(http.calls[1][2]["json"]["visibility"], "unlisted")
+        with self.assertRaises(s.PostError):
+            s.post_mastodon(mkpost(), {**self.ENV, "MASTODON_VISIBILITY": "everyone"}, FakeHttp(), sleep=NOSLEEP)
+
+    def test_401_and_403_are_terminal_with_actionable_messages_and_no_token(self):
+        for code, word in ((401, "invalid or revoked"), (403, "write:statuses")):
+            http = FakeHttp(self.INSTANCE_OK, Resp(code, text="token MASTO-SECRET-TOKEN rejected"), Resp(200, {"id": "x"}))
+            with self.assertRaises(s.PostError) as cm:
+                s.post_mastodon(mkpost(), self.ENV, http, sleep=NOSLEEP)
+            self.assertIn(word, str(cm.exception))
+            self.assertNotIn("MASTO-SECRET-TOKEN", str(cm.exception))
+            self.assertEqual(len(http.calls), 2, "the post must not be retried")
+
+    def test_a_token_echoed_in_an_error_body_is_redacted(self):
+        # statuses with no fixed hint print the response body, so this is where redaction matters
+        http = FakeHttp(self.INSTANCE_OK, Resp(500, text="upstream error, saw token MASTO-SECRET-TOKEN"))
+        with self.assertRaises(s.PostError) as cm:
+            s.post_mastodon(mkpost(), self.ENV, http, sleep=NOSLEEP)
+        self.assertIn("HTTP 500", str(cm.exception))
+        self.assertNotIn("MASTO-SECRET-TOKEN", str(cm.exception))
+
+    def test_a_422_explains_itself(self):
+        http = FakeHttp(self.INSTANCE_OK, Resp(422, text="Validation failed"))
+        with self.assertRaises(s.PostError) as cm:
+            s.post_mastodon(mkpost(), self.ENV, http, sleep=NOSLEEP)
+        self.assertIn("rejected", str(cm.exception))
+
+    def test_skipped_cleanly_without_credentials(self):
+        self.assertEqual(s.missing_credentials("mastodon", {}), ["MASTODON_INSTANCE", "MASTODON_ACCESS_TOKEN"])
+        self.assertEqual(s.missing_credentials("mastodon", self.ENV), [])
+
+    def test_token_check_ok_and_rejected(self):
+        ok = Namespace(warn_days=14, report=None)
+        self.assertEqual(s.cmd_check_tokens(ok, env=self.ENV, http=FakeHttp(Resp(200, {"name": "app"}))), 0)
+        self.assertEqual(s.cmd_check_tokens(ok, env=self.ENV, http=FakeHttp(Resp(401))), 2)
+        self.assertEqual(s.cmd_check_tokens(ok, env={**self.ENV, "MASTODON_INSTANCE": "http://bad"}, http=FakeHttp()), 2)
 
 
 class LinkedInAuthTests(unittest.TestCase):

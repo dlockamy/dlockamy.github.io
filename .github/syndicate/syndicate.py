@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cross-post NEW dlockamy.com blog posts to LinkedIn, Bluesky and X.
+"""Cross-post NEW dlockamy.com blog posts to LinkedIn, Bluesky, Mastodon and X.
 
 Opt-in per post, in the post's front matter:
 
@@ -29,18 +29,20 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import os
 import re
 import subprocess
 import sys
 import time
+import urllib.parse
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Optional
 
 SITE_URL = os.environ.get("SYNDICATE_SITE_URL", "https://dlockamy.com").rstrip("/")
-PLATFORMS = ("linkedin", "bluesky", "x")
+PLATFORMS = ("linkedin", "bluesky", "mastodon", "x")
 ALIASES = {"twitter": "x"}
 
 # LinkedIn rotates API versions (YYYYMM) and sunsets old ones after about a year.
@@ -49,6 +51,11 @@ LINKEDIN_VERSION_DEFAULT = "202609"
 LINKEDIN_API = "https://api.linkedin.com"
 BLUESKY_PDS_DEFAULT = "https://bsky.social"
 X_API_DEFAULT = "https://api.x.com"
+
+# Mastodon limits differ per server; these are only the fallback when /api/v2/instance cannot be read.
+MASTODON_MAX_DEFAULT = 500
+MASTODON_URL_LEN_DEFAULT = 23  # a URL always counts as this many characters, however long it is
+MASTODON_VISIBILITIES = ("public", "unlisted", "private", "direct")
 
 # Limits. LinkedIn's title/description caps are not documented where we read, so
 # these are deliberately conservative.
@@ -64,7 +71,7 @@ AI_NOTE_DEFAULT = "Drafted with AI assistance."
 
 _SECRET_KEYS = (
     "LINKEDIN_ACCESS_TOKEN", "LINKEDIN_CLIENT_SECRET", "BLUESKY_APP_PASSWORD",
-    "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET", "X_API_KEY",
+    "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET", "X_API_KEY", "MASTODON_ACCESS_TOKEN",
 )
 
 
@@ -316,6 +323,23 @@ def compose_x_text(p: Post) -> str:
     return f"{text}{tail}\n{p.url}"
 
 
+def mastodon_length(text: str, url: str, url_len: int) -> int:
+    """Mastodon counts every URL as a fixed length, whatever it really is."""
+    return len(text.replace(url, "")) + (url_len if url in text else 0)
+
+
+def compose_mastodon_text(p: Post, max_chars: int = MASTODON_MAX_DEFAULT, url_len: int = MASTODON_URL_LEN_DEFAULT) -> str:
+    """Title, as much excerpt as fits, the AI note (if on), then the URL last."""
+    if "mastodon" in p.overrides:
+        body = p.overrides["mastodon"]
+        return body if p.url in body else f"{body}\n\n{p.url}"
+    note = _ai_note(p)
+    tail = f"\n\n{note}" if note else ""
+    head = p.title if not p.excerpt else f"{p.title}\n\n{p.excerpt}"
+    room = max_chars - url_len - 2 - len(tail)  # 2 = the blank line before the URL
+    return f"{truncate(head, max(room, 1))}{tail}\n\n{p.url}"
+
+
 def x_text_weight(text: str, url: str) -> int:
     return x_weight(text.replace(url, "")) + (X_URL_WEIGHT if url in text else 0)
 
@@ -435,10 +459,66 @@ def post_x(p: Post, env, http, sleep=time.sleep) -> str:
     raise PostError(redact(f"X HTTP {resp.status_code}: {hint or _snippet(resp)}", env))
 
 
-CLIENTS = {"linkedin": post_linkedin, "bluesky": post_bluesky, "x": post_x}
+def mastodon_base(instance: str) -> str:
+    """`hachyderm.io` or `https://hachyderm.io/` -> `https://hachyderm.io`. Nothing else is accepted."""
+    raw = (instance or "").strip()
+    if not raw:
+        raise PostError("MASTODON_INSTANCE is empty")
+    u = urllib.parse.urlparse(raw if "://" in raw else f"https://{raw}")
+    host = (u.hostname or "").lower()
+    if (u.scheme != "https" or u.path not in ("", "/") or u.username or u.password or u.query or u.fragment
+            or not re.fullmatch(r"[a-z0-9-]+(\.[a-z0-9-]+)+", host)):
+        raise PostError("MASTODON_INSTANCE must be just an https host, for example hachyderm.io")
+    return f"https://{host}" + (f":{u.port}" if u.port else "")
+
+
+def mastodon_limits(base: str, http) -> tuple:
+    """(max characters, characters counted per URL) from the server itself; defaults if unreadable."""
+    try:
+        r = http.get(f"{base}/api/v2/instance")
+        if r.status_code == 200:
+            st = r.json()["configuration"]["statuses"]
+            return int(st["max_characters"]), int(st.get("characters_reserved_per_url", MASTODON_URL_LEN_DEFAULT))
+    except Exception:
+        pass
+    return MASTODON_MAX_DEFAULT, MASTODON_URL_LEN_DEFAULT
+
+
+def post_mastodon(p: Post, env, http, sleep=time.sleep) -> str:
+    base = mastodon_base(env["MASTODON_INSTANCE"])
+    visibility = (env.get("MASTODON_VISIBILITY") or "public").strip().lower()
+    if visibility not in MASTODON_VISIBILITIES:
+        raise PostError(f"MASTODON_VISIBILITY must be one of {', '.join(MASTODON_VISIBILITIES)}")
+    max_chars, url_len = mastodon_limits(base, http)
+    text = compose_mastodon_text(p, max_chars, url_len)
+    if mastodon_length(text, p.url, url_len) > max_chars:
+        raise PostError(f"Mastodon text is {mastodon_length(text, p.url, url_len)} characters, over {max_chars}")
+    resp = _send(
+        http, "post", f"{base}/api/v1/statuses", sleep=sleep,
+        headers={
+            "Authorization": f"Bearer {env['MASTODON_ACCESS_TOKEN']}",
+            # Mastodon ignores a repeat of the same key for about an hour, so re-running a job
+            # cannot create a second copy of the same post.
+            "Idempotency-Key": hashlib.sha256(p.url.encode()).hexdigest(),
+        },
+        json={"status": text, "visibility": visibility, "language": "en"},
+    )
+    if resp.status_code == 200:
+        j = resp.json()
+        return j.get("url") or j.get("id") or "(created)"
+    hint = {
+        401: "the access token is invalid or revoked: create a new one under Preferences > Development",
+        403: "the token lacks the write:statuses scope: create the application with that scope",
+        422: "the server rejected the post (too long, or the text was refused)",
+    }.get(resp.status_code, "")
+    raise PostError(redact(f"Mastodon HTTP {resp.status_code}: {hint or _snippet(resp)}", env))
+
+
+CLIENTS = {"linkedin": post_linkedin, "bluesky": post_bluesky, "mastodon": post_mastodon, "x": post_x}
 REQUIRED = {
     "linkedin": ("LINKEDIN_ACCESS_TOKEN", "LINKEDIN_PERSON_URN"),
     "bluesky": ("BLUESKY_HANDLE", "BLUESKY_APP_PASSWORD"),
+    "mastodon": ("MASTODON_INSTANCE", "MASTODON_ACCESS_TOKEN"),
     "x": ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET"),
 }
 
@@ -556,6 +636,10 @@ def _preview_payload(p: Post, platform: str) -> dict:
         return compose_linkedin(p)
     if platform == "bluesky":
         return compose_bluesky_record(p)
+    if platform == "mastodon":
+        t = compose_mastodon_text(p)
+        return {"status": t, "visibility": "public", "length": mastodon_length(t, p.url, MASTODON_URL_LEN_DEFAULT),
+                "limit": MASTODON_MAX_DEFAULT}
     text = compose_x_text(p)
     return {"text": text, "weighted_length": x_text_weight(text, p.url), "limit": X_TEXT_MAX}
 
@@ -568,6 +652,8 @@ def cmd_preview(a) -> int:
     print(f"    card: {li['content']['article']['title']!r} / {li['content']['article']['description']!r}")
     bt = compose_bluesky_text(p)
     print(f"\n--- Bluesky ({len(bt)}/{BLUESKY_TEXT_MAX})\n{bt}")
+    mt = compose_mastodon_text(p)
+    print(f"\n--- Mastodon ({mastodon_length(mt, p.url, MASTODON_URL_LEN_DEFAULT)}/{MASTODON_MAX_DEFAULT}; the server's own limit is used when posting)\n{mt}")
     xt = compose_x_text(p)
     print(f"\n--- X ({x_text_weight(xt, p.url)}/{X_TEXT_MAX} weighted)\n{xt}")
     return 0
@@ -620,6 +706,20 @@ def cmd_check_tokens(a, env=None, http=None) -> int:
             lines.append("bluesky: LOGIN FAILED")
     else:
         lines.append("bluesky: not configured")
+    if all(env.get(k) for k in REQUIRED["mastodon"]):
+        try:
+            base = mastodon_base(env["MASTODON_INSTANCE"])
+            r = http.get(f"{base}/api/v1/apps/verify_credentials", headers={"Authorization": f"Bearer {env['MASTODON_ACCESS_TOKEN']}"})
+            if r.status_code == 200:
+                lines.append(f"mastodon: token ok ({base.split('//')[1]})")
+            else:
+                problems.append(f"Mastodon token check failed (HTTP {r.status_code}): the token may have been revoked.")
+                lines.append("mastodon: TOKEN REJECTED")
+        except PostError as e:
+            problems.append(f"Mastodon is misconfigured: {e}")
+            lines.append("mastodon: MISCONFIGURED")
+    else:
+        lines.append("mastodon: not configured")
     lines.append("x: not checked (any call spends pay-per-use credits)")
     print("\n".join(lines))
     for ln in lines:

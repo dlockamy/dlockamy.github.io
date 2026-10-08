@@ -1,4 +1,4 @@
-# Cross-post NEW blog posts to LinkedIn, Bluesky and X.
+# Cross-post NEW blog posts to LinkedIn, Bluesky, Mastodon and X.
 # Opt-in per post (front matter `syndicate: true` or a list). See .github/SYNDICATION.md.
 #
 # One job per (post, platform), so a failure on one platform can be re-run from the
@@ -16,7 +16,7 @@ on:
         description: "Path of an existing post, e.g. _posts/2026-10-05-some-post.md"
         required: true
       platforms:
-        description: "Comma list: linkedin,bluesky,x (blank = every platform)"
+        description: "Comma list: linkedin,bluesky,mastodon,x (blank = every platform)"
         required: false
         default: ""
       dry_run:
@@ -86,6 +86,9 @@ jobs:
           LINKEDIN_VERSION: ${{ vars.LINKEDIN_VERSION }}
           BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+          MASTODON_INSTANCE: ${{ secrets.MASTODON_INSTANCE }}
+          MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
+          MASTODON_VISIBILITY: ${{ vars.MASTODON_VISIBILITY }}
           X_API_KEY: ${{ secrets.X_API_KEY }}
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
