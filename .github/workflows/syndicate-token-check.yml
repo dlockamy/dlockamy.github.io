@@ -1,7 +1,7 @@
 # Weekly: is the LinkedIn token about to expire, and do the Bluesky and Mastodon credentials still work?
 # LinkedIn gives self-serve apps a 60-day token and no refresh token, so a human has to
 # re-run .github/syndicate/linkedin_auth.py. This opens an issue before it lapses.
-# Nothing is checked until the secrets exist, and X is never called (it bills per request).
+# Nothing is checked until the secrets exist.
 name: Syndication token check
 
 on:
