@@ -226,6 +226,12 @@ def _ai_note(p: Post) -> str:
 # ---------------------------------------------------------------------------- compose
 
 
+def link(p: Post, platform: str) -> str:
+    """The post's URL tagged with where it was shared, so analytics can tell the platforms apart.
+    The bare `p.url` stays the post's identity (wait-for-live, idempotency key); only what readers click is tagged."""
+    return f"{p.url}?utm_source={platform}&utm_medium=social"
+
+
 def compose_linkedin(p: Post, author_urn: str = "urn:li:person:EXAMPLE") -> dict:
     if "linkedin" in p.overrides:
         commentary = p.overrides["linkedin"]
@@ -249,7 +255,7 @@ def compose_linkedin(p: Post, author_urn: str = "urn:li:person:EXAMPLE") -> dict
         # The Posts API does NOT scrape the URL; the card's text must be supplied.
         "content": {
             "article": {
-                "source": p.url,
+                "source": link(p, "linkedin"),
                 "title": truncate(p.title, LINKEDIN_TITLE_MAX),
                 "description": truncate(p.excerpt or p.title, LINKEDIN_DESC_MAX),
             }
@@ -280,7 +286,7 @@ def compose_bluesky_record(p: Post, now: Optional[dt.datetime] = None) -> dict:
         "embed": {
             "$type": "app.bsky.embed.external",
             "external": {
-                "uri": p.url,
+                "uri": link(p, "bluesky"),
                 "title": truncate(p.title, 300),
                 "description": truncate(p.excerpt or p.title, 300),
             },
@@ -297,12 +303,12 @@ def compose_mastodon_text(p: Post, max_chars: int = MASTODON_MAX_DEFAULT, url_le
     """Title, as much excerpt as fits, the AI note (if on), then the URL last."""
     if "mastodon" in p.overrides:
         body = p.overrides["mastodon"]
-        return body if p.url in body else f"{body}\n\n{p.url}"
+        return body if p.url in body else f"{body}\n\n{link(p, 'mastodon')}"
     note = _ai_note(p)
     tail = f"\n\n{note}" if note else ""
     head = p.title if not p.excerpt else f"{p.title}\n\n{p.excerpt}"
     room = max_chars - url_len - 2 - len(tail)  # 2 = the blank line before the URL
-    return f"{truncate(head, max(room, 1))}{tail}\n\n{p.url}"
+    return f"{truncate(head, max(room, 1))}{tail}\n\n{link(p, 'mastodon')}"
 
 
 # ------------------------------------------------------------------------------ http
@@ -434,8 +440,9 @@ def post_mastodon(p: Post, env, http, sleep=time.sleep) -> str:
         raise PostError(f"MASTODON_VISIBILITY must be one of {', '.join(MASTODON_VISIBILITIES)}")
     max_chars, url_len = mastodon_limits(base, http)
     text = compose_mastodon_text(p, max_chars, url_len)
-    if mastodon_length(text, p.url, url_len) > max_chars:
-        raise PostError(f"Mastodon text is {mastodon_length(text, p.url, url_len)} characters, over {max_chars}")
+    url = link(p, "mastodon") if link(p, "mastodon") in text else p.url
+    if mastodon_length(text, url, url_len) > max_chars:
+        raise PostError(f"Mastodon text is {mastodon_length(text, url, url_len)} characters, over {max_chars}")
     resp = _send(
         http, "post", f"{base}/api/v1/statuses", sleep=sleep,
         headers={
@@ -580,7 +587,7 @@ def _preview_payload(p: Post, platform: str) -> dict:
         return compose_bluesky_record(p)
     if platform == "mastodon":
         t = compose_mastodon_text(p)
-        return {"status": t, "visibility": "public", "length": mastodon_length(t, p.url, MASTODON_URL_LEN_DEFAULT),
+        return {"status": t, "visibility": "public", "length": mastodon_length(t, link(p, "mastodon"), MASTODON_URL_LEN_DEFAULT),
                 "limit": MASTODON_MAX_DEFAULT}
     raise ValueError(f"unknown platform {platform!r}")
 
@@ -594,7 +601,7 @@ def cmd_preview(a) -> int:
     bt = compose_bluesky_text(p)
     print(f"\n--- Bluesky ({len(bt)}/{BLUESKY_TEXT_MAX})\n{bt}")
     mt = compose_mastodon_text(p)
-    print(f"\n--- Mastodon ({mastodon_length(mt, p.url, MASTODON_URL_LEN_DEFAULT)}/{MASTODON_MAX_DEFAULT}; the server's own limit is used when posting)\n{mt}")
+    print(f"\n--- Mastodon ({mastodon_length(mt, link(p, "mastodon"), MASTODON_URL_LEN_DEFAULT)}/{MASTODON_MAX_DEFAULT}; the server's own limit is used when posting)\n{mt}")
     return 0
 
 
