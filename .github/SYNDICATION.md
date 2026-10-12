@@ -21,6 +21,9 @@ social:                              # optional: your own wording per platform
   mastodon: "Text for Mastodon (the link is added for you)"
 ```
 
+The link each platform shares carries `?utm_source=<platform>&utm_medium=social`, so analytics tools that read
+campaign parameters can tell the platforms apart. The post's own URL (and the idempotency key) stay untagged.
+
 Only **new** files in `_posts/` trigger it. Editing an old post never re-posts it.
 If a post has `ai_assisted: true`, each platform's text ends with "Drafted with AI assistance."
 To drop that line, set the repository variable `SYNDICATE_DISCLOSE_AI` to `0`.

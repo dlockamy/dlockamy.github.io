@@ -143,6 +143,13 @@ class TextTests(unittest.TestCase):
 
 
 class ComposeTests(unittest.TestCase):
+    def test_shared_links_say_which_platform_they_were_shared_on(self):
+        p = mkpost()
+        for platform in ("linkedin", "bluesky", "mastodon"):
+            self.assertEqual(s.link(p, platform), f"{p.url}?utm_source={platform}&utm_medium=social")
+        # The post's own URL stays untagged: it is what wait-for-live and the idempotency key use.
+        self.assertNotIn("utm_", p.url)
+
     def test_linkedin_payload_shape(self):
         p = mkpost()
         j = s.compose_linkedin(p, "urn:li:person:abc")
@@ -150,7 +157,7 @@ class ComposeTests(unittest.TestCase):
         self.assertEqual(j["visibility"], "PUBLIC")
         self.assertEqual(j["lifecycleState"], "PUBLISHED")
         self.assertEqual(j["distribution"]["feedDistribution"], "MAIN_FEED")
-        self.assertEqual(j["content"]["article"]["source"], p.url)
+        self.assertEqual(j["content"]["article"]["source"], s.link(p, "linkedin"))
         self.assertEqual(j["content"]["article"]["title"], p.title)
         self.assertTrue(j["content"]["article"]["description"])
         self.assertIn("Drafted with AI assistance.", j["commentary"])
@@ -193,7 +200,7 @@ class ComposeTests(unittest.TestCase):
         self.assertEqual(rec["$type"], "app.bsky.feed.post")
         self.assertEqual(rec["createdAt"], "2026-10-06T01:02:03.456Z")
         self.assertEqual(rec["embed"]["$type"], "app.bsky.embed.external")
-        self.assertEqual(rec["embed"]["external"]["uri"], mkpost().url)
+        self.assertEqual(rec["embed"]["external"]["uri"], s.link(mkpost(), "bluesky"))
 
     def test_per_platform_overrides_win(self):
         p = mkpost("social:\n  linkedin: 'Custom (LI)'\n  bluesky: 'Custom BS'\n")
@@ -429,17 +436,17 @@ class MastodonTests(unittest.TestCase):
         for ex in ("short", "word " * 400, "日本語 " * 200):
             p = mkpost(excerpt=ex)
             t = s.compose_mastodon_text(p, 500, 23)
-            self.assertLessEqual(s.mastodon_length(t, p.url, 23), 500, ex[:8])
-            self.assertTrue(t.endswith(p.url))
+            self.assertLessEqual(s.mastodon_length(t, s.link(p, "mastodon"), 23), 500, ex[:8])
+            self.assertTrue(t.endswith(s.link(p, "mastodon")))
         self.assertIn("Drafted with AI assistance.", s.compose_mastodon_text(mkpost(excerpt="word " * 400), 500, 23))
 
     def test_a_smaller_server_limit_is_respected(self):
         p = mkpost(excerpt="word " * 400)
-        self.assertLessEqual(s.mastodon_length(s.compose_mastodon_text(p, 300, 23), p.url, 23), 300)
+        self.assertLessEqual(s.mastodon_length(s.compose_mastodon_text(p, 300, 23), s.link(p, "mastodon"), 23), 300)
 
     def test_override_wins_and_gets_the_url(self):
         p = mkpost("social:\n  mastodon: 'My own words'\n")
-        self.assertEqual(s.compose_mastodon_text(p), f"My own words\n\n{p.url}")
+        self.assertEqual(s.compose_mastodon_text(p), f"My own words\n\n{s.link(p, 'mastodon')}")
 
     def test_posts_with_the_right_request_and_returns_the_status_url(self):
         http = FakeHttp(self.INSTANCE_OK, Resp(200, {"id": "1", "url": "https://hachyderm.io/@dlockamy/1"}))
@@ -468,7 +475,7 @@ class MastodonTests(unittest.TestCase):
         http = FakeHttp(small, Resp(200, {"id": "1"}))
         s.post_mastodon(mkpost(excerpt="word " * 400), self.ENV, http, sleep=NOSLEEP)
         sent = http.calls[1][2]["json"]["status"]
-        self.assertLessEqual(s.mastodon_length(sent, mkpost().url, 23), 300)
+        self.assertLessEqual(s.mastodon_length(sent, s.link(mkpost(), "mastodon"), 23), 300)
 
     def test_falls_back_to_defaults_if_the_instance_endpoint_is_unreadable(self):
         http = FakeHttp(Resp(500), Resp(200, {"id": "1"}))

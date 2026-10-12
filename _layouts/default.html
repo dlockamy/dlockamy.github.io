@@ -47,5 +47,9 @@
   {% include footer.html %}
 
   <script src="{{ '/assets/js/main.js' | relative_url }}"></script>
+  {%- if jekyll.environment == "production" %}
+  <!-- Cloudflare Web Analytics: cookieless, no personal data, page views and referrers only. -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "792d8e5522784b959694186060277c06"}'></script>
+  {%- endif %}
 </body>
 </html>
