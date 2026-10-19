@@ -1,6 +1,8 @@
 """Tests for syndicate.py. No network: every HTTP call goes through a recording fake."""
+import contextlib
 import datetime as dt
 import glob
+import io
 import json
 import os
 import subprocess
@@ -40,8 +42,9 @@ def mkpost(extra="", ai=True, title="Giving two generated characters a skeleton"
 
 
 class Resp:
-    def __init__(self, status=200, body=None, headers=None, text=""):
+    def __init__(self, status=200, body=None, headers=None, text="", content=b""):
         self.status_code = status
+        self.content = content
         self._body = body if body is not None else {}
         self.headers = headers or {}
         self.text = text or json.dumps(self._body)
@@ -70,6 +73,9 @@ class FakeHttp:
 
     def get(self, url, **kw):
         return self._do("get", url, **kw)
+
+    def put(self, url, **kw):
+        return self._do("put", url, **kw)
 
 
 NOSLEEP = lambda _s: None  # noqa: E731
@@ -592,6 +598,211 @@ class LinkedInAuthTests(unittest.TestCase):
     def test_a_failed_exchange_stops_with_a_message(self):
         with self.assertRaises(SystemExit):
             self.la.exchange_code(FakeHttp(Resp(400, text="invalid_client")), "CID", "CSEC", "CODE", 8765)
+
+
+PNG = b"\x89PNG\r\n\x1a\n" + b"x" * 200
+JPEG = b"\xff\xd8\xff\xe0" + b"x" * 200
+IMG_POST = "image: /images/card.png\n"
+IMG_URL = "https://dlockamy.com/images/card.png"
+LI_UP = "https://www.linkedin.com/dms-uploads/abc"
+LI_INIT = {"value": {"uploadUrl": LI_UP, "image": "urn:li:image:C123"}}
+BLOB = {"$type": "blob", "ref": {"$link": "bafk"}, "mimeType": "image/png", "size": 200}
+
+
+def quiet(fn, *a, **kw):
+    """Run fn, returning (result, everything it printed)."""
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        out = fn(*a, **kw)
+    return out, buf.getvalue()
+
+
+class PreviewImageTests(unittest.TestCase):
+    def test_a_site_relative_image_becomes_an_absolute_url_like_jekyll(self):
+        self.assertEqual(mkpost(IMG_POST).image, IMG_URL)
+        self.assertEqual(mkpost("image: images/card.png\n").image, IMG_URL)
+
+    def test_an_absolute_url_is_kept_and_no_image_is_empty(self):
+        self.assertEqual(mkpost("image: https://dlockamy.com/images/x.jpg\n").image, "https://dlockamy.com/images/x.jpg")
+        self.assertEqual(mkpost().image, "")
+
+    def test_fetch_returns_bytes_and_a_mime_type_sniffed_from_the_content(self):
+        http = FakeHttp(Resp(200, content=PNG), Resp(200, content=JPEG))
+        self.assertEqual(s.fetch_image(mkpost(IMG_POST), http), (PNG, "image/png"))
+        self.assertEqual(s.fetch_image(mkpost(IMG_POST), http), (JPEG, "image/jpeg"))
+        self.assertEqual(http.calls[0][1], IMG_URL)
+
+    def test_no_image_means_no_request_at_all(self):
+        http = FakeHttp()
+        self.assertIsNone(s.fetch_image(mkpost(), http))
+        self.assertEqual(http.calls, [])
+
+    def test_an_image_from_another_site_is_never_fetched(self):
+        http = FakeHttp()
+        got, out = quiet(s.fetch_image, mkpost("image: https://evil.example/x.png\n"), http)
+        self.assertIsNone(got)
+        self.assertEqual(http.calls, [])
+        self.assertIn("::warning::", out)
+
+    def test_every_bad_image_is_a_warning_and_a_none_never_an_exception(self):
+        cases = {
+            "404": Resp(404),
+            "empty": Resp(200, content=b""),
+            "html served as an image": Resp(200, content=b"<html>not an image</html>"),
+            "too big": Resp(200, content=b"\x89PNG\r\n\x1a\n" + b"x" * s.IMAGE_MAX_BYTES),
+            "network error": requests.exceptions.ConnectionError("boom"),
+        }
+        for name, item in cases.items():
+            with self.subTest(name):
+                got, out = quiet(s.fetch_image, mkpost(IMG_POST), FakeHttp(item))
+                self.assertIsNone(got)
+                self.assertIn("::warning::", out)
+
+    def test_composers_only_add_a_thumbnail_when_given_one(self):
+        self.assertNotIn("thumbnail", s.compose_linkedin(mkpost(IMG_POST))["content"]["article"])
+        self.assertEqual(s.compose_linkedin(mkpost(), thumbnail="urn:li:image:C1")["content"]["article"]["thumbnail"], "urn:li:image:C1")
+        self.assertNotIn("thumb", s.compose_bluesky_record(mkpost())["embed"]["external"])
+        self.assertEqual(s.compose_bluesky_record(mkpost(), thumb=BLOB)["embed"]["external"]["thumb"], BLOB)
+
+    def test_preview_says_so_when_there_is_no_image(self):
+        post = Path(tempfile.mkdtemp()) / "2026-10-05-a-test-post.md"
+        post.write_text('---\ntitle: T\ndate: 2026-10-05\nexcerpt: E\n---\nB\n')
+        _, out = quiet(s.cmd_preview, Namespace(post=str(post)))
+        self.assertIn("card image: NONE", out)
+        post.write_text('---\ntitle: T\ndate: 2026-10-05\nexcerpt: E\nimage: /images/c.png\n---\nB\n')
+        _, out = quiet(s.cmd_preview, Namespace(post=str(post)))
+        self.assertIn("https://dlockamy.com/images/c.png", out)
+
+
+class LinkedInImageTests(unittest.TestCase):
+    ENV = {"LINKEDIN_ACCESS_TOKEN": "TOKEN-SECRET-123", "LINKEDIN_PERSON_URN": "urn:li:person:abc"}
+    CREATED = Resp(201, headers={"x-restli-id": "urn:li:share:99"})
+
+    def run_flow(self, *responses, post=None):
+        http = FakeHttp(*responses)
+        (ident, out) = quiet(s.post_linkedin, post or mkpost(IMG_POST), self.ENV, http, sleep=NOSLEEP)
+        return ident, http, out
+
+    def posts_body(self, http):
+        return [kw["json"] for m, u, kw in http.calls if u == "https://api.linkedin.com/rest/posts"]
+
+    def test_uploads_the_image_then_posts_with_the_thumbnail_urn(self):
+        ident, http, _ = self.run_flow(Resp(200, content=PNG), Resp(200, LI_INIT), Resp(201), self.CREATED)
+        self.assertEqual(ident, "urn:li:share:99")
+        self.assertEqual([(m, u) for m, u, _ in http.calls], [
+            ("get", IMG_URL),
+            ("post", "https://api.linkedin.com/rest/images?action=initializeUpload"),
+            ("put", LI_UP),
+            ("post", "https://api.linkedin.com/rest/posts"),
+        ])
+        init = http.calls[1][2]
+        self.assertEqual(init["json"], {"initializeUploadRequest": {"owner": "urn:li:person:abc"}})
+        self.assertEqual(init["headers"]["Linkedin-Version"], s.LINKEDIN_VERSION_DEFAULT)
+        put = http.calls[2][2]
+        self.assertEqual(put["data"], PNG)
+        self.assertEqual(put["headers"]["Content-Type"], "image/png")
+        self.assertEqual(self.posts_body(http)[0]["content"]["article"]["thumbnail"], "urn:li:image:C123")
+
+    def test_a_post_without_an_image_makes_exactly_one_request_as_before(self):
+        http = FakeHttp(self.CREATED)
+        s.post_linkedin(mkpost(), self.ENV, http, sleep=NOSLEEP)
+        self.assertEqual(len(http.calls), 1)
+        self.assertNotIn("thumbnail", self.posts_body(http)[0]["content"]["article"])
+
+    def test_the_token_is_never_sent_to_an_upload_url_that_is_not_linkedins(self):
+        evil = {"value": {"uploadUrl": "https://evil.example/up", "image": "urn:li:image:C123"}}
+        ident, http, out = self.run_flow(Resp(200, content=PNG), Resp(200, evil), self.CREATED)
+        self.assertEqual(ident, "urn:li:share:99")
+        self.assertFalse([c for c in http.calls if c[0] == "put"])
+        self.assertNotIn("thumbnail", self.posts_body(http)[0]["content"]["article"])
+        self.assertIn("::warning::", out)
+
+    def test_an_upload_target_over_plain_http_is_refused_too(self):
+        plain = {"value": {"uploadUrl": "http://www.linkedin.com/up", "image": "urn:li:image:C123"}}
+        _, http, _ = self.run_flow(Resp(200, content=PNG), Resp(200, plain), self.CREATED)
+        self.assertFalse([c for c in http.calls if c[0] == "put"])
+
+    def test_if_the_upload_cannot_start_the_post_still_goes_out_as_a_text_card(self):
+        for failing in (Resp(403, text="no"), Resp(500, text="down")):
+            with self.subTest(status=failing.status_code):
+                ident, http, out = self.run_flow(Resp(200, content=PNG), failing, self.CREATED)
+                self.assertEqual(ident, "urn:li:share:99")
+                self.assertNotIn("thumbnail", self.posts_body(http)[0]["content"]["article"])
+                self.assertIn("::warning::", out)
+
+    def test_if_the_image_bytes_are_refused_the_post_still_goes_out(self):
+        ident, http, _ = self.run_flow(Resp(200, content=PNG), Resp(200, LI_INIT), Resp(400), self.CREATED)
+        self.assertEqual(ident, "urn:li:share:99")
+        self.assertNotIn("thumbnail", self.posts_body(http)[0]["content"]["article"])
+
+    def test_a_definite_rejection_with_a_thumbnail_retries_once_without_it(self):
+        ident, http, out = self.run_flow(
+            Resp(200, content=PNG), Resp(200, LI_INIT), Resp(201), Resp(422, text="bad thumbnail"), self.CREATED)
+        self.assertEqual(ident, "urn:li:share:99")
+        first, second = self.posts_body(http)
+        self.assertIn("thumbnail", first["content"]["article"])
+        self.assertNotIn("thumbnail", second["content"]["article"])
+        self.assertIn("retrying", out)
+
+    def test_a_server_error_is_not_retried_because_the_post_may_exist(self):
+        http = FakeHttp(Resp(200, content=PNG), Resp(200, LI_INIT), Resp(201), Resp(500, text="boom"))
+        with self.assertRaises(s.PostError):
+            quiet(s.post_linkedin, mkpost(IMG_POST), self.ENV, http, sleep=NOSLEEP)
+        self.assertEqual(len(self.posts_body(http)), 1)
+
+    def test_the_token_never_appears_in_anything_printed(self):
+        _, _, out = self.run_flow(Resp(200, content=PNG), Resp(403, text="denied TOKEN-SECRET-123"), self.CREATED)
+        self.assertNotIn("TOKEN-SECRET-123", out)
+
+
+class BlueskyImageTests(unittest.TestCase):
+    ENV = {"BLUESKY_HANDLE": "dlockamy.com", "BLUESKY_APP_PASSWORD": "app-pass-SECRET"}
+    LOGIN = Resp(200, {"accessJwt": "JWT", "did": "did:plc:abc"})
+    CREATED = Resp(200, {"uri": "at://did:plc:abc/app.bsky.feed.post/1"})
+
+    def run_flow(self, *responses):
+        http = FakeHttp(*responses)
+        ident, out = quiet(s.post_bluesky, mkpost(IMG_POST), self.ENV, http, sleep=NOSLEEP)
+        return ident, http, out
+
+    def records(self, http):
+        return [kw["json"]["record"] for m, u, kw in http.calls if u.endswith("createRecord")]
+
+    def test_uploads_the_blob_then_attaches_it_as_the_cards_thumb(self):
+        ident, http, _ = self.run_flow(self.LOGIN, Resp(200, content=PNG), Resp(200, {"blob": BLOB}), self.CREATED)
+        self.assertEqual(ident, "at://did:plc:abc/app.bsky.feed.post/1")
+        self.assertEqual([u.rsplit("/", 1)[-1] for _, u, _ in http.calls],
+                         ["com.atproto.server.createSession", "card.png", "com.atproto.repo.uploadBlob", "com.atproto.repo.createRecord"])
+        up = http.calls[2][2]
+        self.assertEqual(up["data"], PNG)
+        self.assertEqual(up["headers"], {"Authorization": "Bearer JWT", "Content-Type": "image/png"})
+        self.assertEqual(self.records(http)[0]["embed"]["external"]["thumb"], BLOB)
+
+    def test_an_image_over_blueskys_blob_limit_is_skipped_without_uploading(self):
+        big = b"\x89PNG\r\n\x1a\n" + b"x" * s.BLUESKY_BLOB_MAX
+        ident, http, out = self.run_flow(self.LOGIN, Resp(200, content=big), self.CREATED)
+        self.assertEqual(ident, "at://did:plc:abc/app.bsky.feed.post/1")
+        self.assertFalse([c for c in http.calls if c[1].endswith("uploadBlob")])
+        self.assertNotIn("thumb", self.records(http)[0]["embed"]["external"])
+        self.assertIn("::warning::", out)
+
+    def test_a_failed_upload_still_posts_a_text_card(self):
+        ident, http, out = self.run_flow(self.LOGIN, Resp(200, content=PNG), Resp(400, text="no"), self.CREATED)
+        self.assertEqual(ident, "at://did:plc:abc/app.bsky.feed.post/1")
+        self.assertNotIn("thumb", self.records(http)[0]["embed"]["external"])
+        self.assertIn("::warning::", out)
+
+    def test_a_rejection_with_a_thumb_retries_once_without_it(self):
+        ident, http, _ = self.run_flow(self.LOGIN, Resp(200, content=PNG), Resp(200, {"blob": BLOB}), Resp(400, text="bad"), self.CREATED)
+        self.assertEqual(ident, "at://did:plc:abc/app.bsky.feed.post/1")
+        first, second = self.records(http)
+        self.assertIn("thumb", first["embed"]["external"])
+        self.assertNotIn("thumb", second["embed"]["external"])
+
+    def test_no_image_means_the_original_two_requests(self):
+        http = FakeHttp(self.LOGIN, self.CREATED)
+        s.post_bluesky(mkpost(), self.ENV, http, sleep=NOSLEEP)
+        self.assertEqual(len(http.calls), 2)
 
 
 if __name__ == "__main__":

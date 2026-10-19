@@ -63,6 +63,13 @@ LINKEDIN_TITLE_MAX = 190
 LINKEDIN_DESC_MAX = 250
 BLUESKY_TEXT_MAX = 300  # graphemes; counting code points is a safe upper bound
 
+# Preview image ("image:" in a post's front matter, the same field the page's Open Graph tags use).
+# Mastodon builds its card from those tags. LinkedIn's Posts API and Bluesky do not scrape the page,
+# so for them the image is fetched from the live site and uploaded.
+IMAGE_MAX_BYTES = 5 * 1024 * 1024  # refuse anything bigger rather than upload it
+BLUESKY_BLOB_MAX = 950_000  # Bluesky refuses blobs of about a million bytes or more
+_IMAGE_MAGIC = ((b"\x89PNG\r\n\x1a\n", "image/png"), (b"\xff\xd8\xff", "image/jpeg"))
+
 AI_NOTE_DEFAULT = "Drafted with AI assistance."
 
 
@@ -102,6 +109,7 @@ class Post:
     syndicate: Optional[set]  # None = not opted in
     overrides: dict = field(default_factory=dict)
     url: str = ""
+    image: str = ""  # absolute URL of the preview image, "" when the post sets none
 
 
 _FM_RE = re.compile(r"\A---[ \t]*\r?\n(.*?)\r?\n---[ \t]*\r?\n?(.*)\Z", re.S)
@@ -183,6 +191,10 @@ def parse_post(path: str, text: Optional[str] = None) -> Post:
         first = next((p for p in re.split(r"\n\s*\n", body) if _plain(p)), "")
         excerpt = _plain(first)
 
+    image = str(fm.get("image") or "").strip()
+    if image and not re.match(r"https?://", image, re.I):
+        image = f"{SITE_URL}/{image.lstrip('/')}"  # Jekyll: absolute_url of a site-relative path
+
     return Post(
         path=path,
         title=title,
@@ -192,6 +204,7 @@ def parse_post(path: str, text: Optional[str] = None) -> Post:
         syndicate=normalise_syndicate(fm.get("syndicate")),
         overrides={ALIASES.get(k, k): str(v) for k, v in (fm.get("social") or {}).items()},
         url=f"{SITE_URL}/posts/{date.year:04d}/{date.month:02d}/{date.day:02d}/{_slugify(fn.group(4))}/",
+        image=image,
     )
 
 
@@ -232,7 +245,7 @@ def link(p: Post, platform: str) -> str:
     return f"{p.url}?utm_source={platform}&utm_medium=social"
 
 
-def compose_linkedin(p: Post, author_urn: str = "urn:li:person:EXAMPLE") -> dict:
+def compose_linkedin(p: Post, author_urn: str = "urn:li:person:EXAMPLE", thumbnail: Optional[str] = None) -> dict:
     if "linkedin" in p.overrides:
         commentary = p.overrides["linkedin"]
     else:
@@ -243,6 +256,13 @@ def compose_linkedin(p: Post, author_urn: str = "urn:li:person:EXAMPLE") -> dict
         commentary = "\n\n".join(parts)
     commentary = truncate(commentary, LINKEDIN_COMMENTARY_MAX // 2)  # headroom for escapes
     commentary = escape_little(commentary)
+    article = {
+        "source": link(p, "linkedin"),
+        "title": truncate(p.title, LINKEDIN_TITLE_MAX),
+        "description": truncate(p.excerpt or p.title, LINKEDIN_DESC_MAX),
+    }
+    if thumbnail:  # an image URN from the Images API; without one the card is text only
+        article["thumbnail"] = thumbnail
     return {
         "author": author_urn,
         "commentary": commentary,
@@ -253,13 +273,7 @@ def compose_linkedin(p: Post, author_urn: str = "urn:li:person:EXAMPLE") -> dict
             "thirdPartyDistributionChannels": [],
         },
         # The Posts API does NOT scrape the URL; the card's text must be supplied.
-        "content": {
-            "article": {
-                "source": link(p, "linkedin"),
-                "title": truncate(p.title, LINKEDIN_TITLE_MAX),
-                "description": truncate(p.excerpt or p.title, LINKEDIN_DESC_MAX),
-            }
-        },
+        "content": {"article": article},
         "lifecycleState": "PUBLISHED",
         "isReshareDisabledByAuthor": False,
     }
@@ -276,9 +290,9 @@ def compose_bluesky_text(p: Post) -> str:
     return text if len(text) <= BLUESKY_TEXT_MAX else truncate(head, BLUESKY_TEXT_MAX)
 
 
-def compose_bluesky_record(p: Post, now: Optional[dt.datetime] = None) -> dict:
+def compose_bluesky_record(p: Post, now: Optional[dt.datetime] = None, thumb: Optional[dict] = None) -> dict:
     now = now or dt.datetime.now(dt.timezone.utc)
-    return {
+    rec = {
         "$type": "app.bsky.feed.post",
         "text": compose_bluesky_text(p),
         "createdAt": now.strftime("%Y-%m-%dT%H:%M:%S.") + f"{now.microsecond // 1000:03d}Z",
@@ -292,6 +306,9 @@ def compose_bluesky_record(p: Post, now: Optional[dt.datetime] = None) -> dict:
             },
         },
     }
+    if thumb:  # a blob from uploadBlob; without one the card is text only
+        rec["embed"]["external"]["thumb"] = thumb
+    return rec
 
 
 def mastodon_length(text: str, url: str, url_len: int) -> int:
@@ -329,6 +346,9 @@ class Http:
     def get(self, url, **kw):
         return self._r.get(url, timeout=self.timeout, **kw)
 
+    def put(self, url, **kw):
+        return self._r.put(url, timeout=self.timeout, **kw)
+
 
 def _snippet(resp) -> str:
     try:
@@ -365,22 +385,133 @@ def _send(http, method: str, url: str, *, retries: int = 2, sleep: Callable = ti
     raise AssertionError("unreachable")
 
 
+# ------------------------------------------------------------------------------ images
+
+
+def warn(msg: str) -> None:
+    print(f"::warning::{msg}")
+    summary(f"- warning: {msg}")
+
+
+def fetch_image(p: Post, http) -> Optional[tuple]:
+    """The post's preview image as (bytes, mime type), or None.
+
+    Never raises: a card without a picture is better than a post that did not go out, so every
+    problem here is a warning and the caller falls back to a text-only card. Only the site's own
+    origin is fetched, and only PNG or JPEG (checked by content, not by name or header).
+    """
+    if not p.image:
+        return None
+    if not p.image.startswith(SITE_URL + "/"):
+        warn(f"preview image skipped: {p.image} is not on {SITE_URL}")
+        return None
+    try:
+        r = http.get(p.image, headers={"User-Agent": "dlockamy-syndicate/1"})
+    except Exception as e:  # noqa: BLE001 - any failure is only a warning
+        warn(f"preview image skipped: could not fetch {p.image} ({type(e).__name__})")
+        return None
+    if r.status_code != 200:
+        warn(f"preview image skipped: {p.image} answered HTTP {r.status_code}")
+        return None
+    data = getattr(r, "content", b"")
+    if not isinstance(data, (bytes, bytearray)) or not data:
+        warn(f"preview image skipped: {p.image} was empty")
+        return None
+    if len(data) > IMAGE_MAX_BYTES:
+        warn(f"preview image skipped: {len(data)} bytes is over the {IMAGE_MAX_BYTES} limit")
+        return None
+    mime = next((m for magic, m in _IMAGE_MAGIC if data.startswith(magic)), None)
+    if mime is None:
+        warn(f"preview image skipped: {p.image} is not a PNG or JPEG")
+        return None
+    return bytes(data), mime
+
+
+def _linkedin_host(url: str) -> bool:
+    u = urllib.parse.urlparse(url)
+    return u.scheme == "https" and (u.hostname or "").endswith("linkedin.com")
+
+
+def upload_linkedin_image(img: tuple, env, http, sleep=time.sleep) -> Optional[str]:
+    """Upload through LinkedIn's Images API and return the image URN, or None (with a warning)."""
+    data, mime = img
+    token, author = env["LINKEDIN_ACCESS_TOKEN"], env["LINKEDIN_PERSON_URN"]
+    version = env.get("LINKEDIN_VERSION") or LINKEDIN_VERSION_DEFAULT
+    try:
+        r = _send(
+            http, "post", f"{LINKEDIN_API}/rest/images?action=initializeUpload", sleep=sleep,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Linkedin-Version": version,
+                "X-Restli-Protocol-Version": "2.0.0",
+                "Content-Type": "application/json",
+            },
+            json={"initializeUploadRequest": {"owner": author}},
+        )
+        if r.status_code not in (200, 201):
+            warn(redact(f"LinkedIn image upload not started (HTTP {r.status_code}: {_snippet(r)}); posting a text card", env))
+            return None
+        value = (r.json() or {}).get("value") or {}
+        upload_url, urn = value.get("uploadUrl", ""), value.get("image", "")
+        if not urn.startswith("urn:li:image:") or not _linkedin_host(upload_url):
+            # Never send the token to a host that is not LinkedIn's.
+            warn("LinkedIn returned an unexpected upload target; posting a text card")
+            return None
+        u = _send(http, "put", upload_url, sleep=sleep, data=data,
+                  headers={"Authorization": f"Bearer {token}", "Content-Type": mime})
+        if u.status_code not in (200, 201):
+            warn(redact(f"LinkedIn image upload failed (HTTP {u.status_code}); posting a text card", env))
+            return None
+        return urn
+    except PostError as e:
+        warn(redact(f"LinkedIn image upload failed ({e}); posting a text card", env))
+        return None
+
+
+def upload_bluesky_image(img: tuple, pds: str, jwt: str, http, sleep=time.sleep, env=None) -> Optional[dict]:
+    """Upload a blob and return it for `external.thumb`, or None (with a warning)."""
+    data, mime = img
+    if len(data) > BLUESKY_BLOB_MAX:
+        warn(f"Bluesky preview image skipped: {len(data)} bytes is over the {BLUESKY_BLOB_MAX} limit")
+        return None
+    try:
+        r = _send(http, "post", f"{pds}/xrpc/com.atproto.repo.uploadBlob", sleep=sleep,
+                  headers={"Authorization": f"Bearer {jwt}", "Content-Type": mime}, data=data)
+    except PostError as e:
+        warn(redact(f"Bluesky image upload failed ({e}); posting a text card", env or {}))
+        return None
+    if r.status_code != 200 or not (r.json() or {}).get("blob"):
+        warn(redact(f"Bluesky image upload failed (HTTP {r.status_code}); posting a text card", env or {}))
+        return None
+    return r.json()["blob"]
+
+
 # ---------------------------------------------------------------------------- clients
 
 
 def post_linkedin(p: Post, env, http, sleep=time.sleep) -> str:
     token, author = env["LINKEDIN_ACCESS_TOKEN"], env["LINKEDIN_PERSON_URN"]
     version = env.get("LINKEDIN_VERSION") or LINKEDIN_VERSION_DEFAULT
-    resp = _send(
-        http, "post", f"{LINKEDIN_API}/rest/posts", sleep=sleep,
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Linkedin-Version": version,
-            "X-Restli-Protocol-Version": "2.0.0",
-            "Content-Type": "application/json",
-        },
-        json=compose_linkedin(p, author),
-    )
+    img = fetch_image(p, http)
+    thumb = upload_linkedin_image(img, env, http, sleep=sleep) if img else None
+
+    def create(thumbnail):
+        return _send(
+            http, "post", f"{LINKEDIN_API}/rest/posts", sleep=sleep,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Linkedin-Version": version,
+                "X-Restli-Protocol-Version": "2.0.0",
+                "Content-Type": "application/json",
+            },
+            json=compose_linkedin(p, author, thumbnail=thumbnail),
+        )
+
+    resp = create(thumb)
+    if thumb and resp.status_code in (400, 422):
+        # A definite rejection means nothing was created, so this one retry cannot double-post.
+        warn("LinkedIn rejected the post with a thumbnail; retrying with a text card")
+        resp = create(None)
     if resp.status_code == 201:
         return resp.headers.get("x-restli-id", "(created; no id returned)")
     hint = {
@@ -399,9 +530,19 @@ def post_bluesky(p: Post, env, http, sleep=time.sleep) -> str:
     if s.status_code != 200:
         raise PostError(redact(f"Bluesky login HTTP {s.status_code}: is the app password valid? ({_snippet(s)})", env))
     sess = s.json()
-    r = _send(http, "post", f"{pds}/xrpc/com.atproto.repo.createRecord", sleep=sleep,
-              headers={"Authorization": f"Bearer {sess['accessJwt']}"},
-              json={"repo": sess["did"], "collection": "app.bsky.feed.post", "record": compose_bluesky_record(p)})
+    img = fetch_image(p, http)
+    thumb = upload_bluesky_image(img, pds, sess["accessJwt"], http, sleep=sleep, env=env) if img else None
+
+    def create(t):
+        return _send(http, "post", f"{pds}/xrpc/com.atproto.repo.createRecord", sleep=sleep,
+                     headers={"Authorization": f"Bearer {sess['accessJwt']}"},
+                     json={"repo": sess["did"], "collection": "app.bsky.feed.post",
+                           "record": compose_bluesky_record(p, thumb=t)})
+
+    r = create(thumb)
+    if thumb and r.status_code == 400:
+        warn("Bluesky rejected the post with a thumbnail; retrying with a text card")
+        r = create(None)
     if r.status_code != 200:
         raise PostError(redact(f"Bluesky createRecord HTTP {r.status_code}: {_snippet(r)}", env))
     return r.json().get("uri", "(created)")
@@ -556,6 +697,7 @@ def cmd_post(a, env=None, http=None, sleep=time.sleep, clock=time.monotonic) -> 
         return 2
     if a.dry_run:
         print(f"[dry run] {platform} <- {p.url}")
+        print(f"[dry run] card image: {p.image or 'none (text-only card)'}")
         print(json.dumps(_preview_payload(p, platform), indent=2, ensure_ascii=False))
         summary(f"- {platform}: dry run, nothing posted ({p.title})")
         return 0
@@ -598,6 +740,10 @@ def cmd_preview(a) -> int:
     li = compose_linkedin(p)
     print(f"--- LinkedIn commentary ({len(li['commentary'])}/{LINKEDIN_COMMENTARY_MAX})\n{li['commentary']}")
     print(f"    card: {li['content']['article']['title']!r} / {li['content']['article']['description']!r}")
+    if p.image:
+        print(f"    card image: {p.image} (LinkedIn and Bluesky upload it when posting; Mastodon reads the page's og:image)")
+    else:
+        print("    card image: NONE. Set `image:` in the front matter (1200x630 PNG or JPEG under images/) or every card is text only")
     bt = compose_bluesky_text(p)
     print(f"\n--- Bluesky ({len(bt)}/{BLUESKY_TEXT_MAX})\n{bt}")
     mt = compose_mastodon_text(p)
