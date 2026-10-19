@@ -122,13 +122,14 @@ moved to Bluesky and Mastodon. The integration was built, then removed. A post t
 Instagram, Threads) is not supported either, for the same dormant-account reason. Reddit is manual only.
 
 ## Known unknowns (honest list)
-Everything is tested against fakes that mirror each platform's documented request shape. Not yet confirmed
-against the live services: LinkedIn API version `202609` and its title/description length limits (set
-conservatively); **the LinkedIn thumbnail** (the `initializeUpload` / upload / `thumbnail` field flow, written from
-LinkedIn's documented Images API and not yet run against the live service; the retry-without-thumbnail fallback
-exists because of this); and **the Bluesky thumbnail** (`uploadBlob` then `external.thumb`). The first real post with
-an `image:` is the test: check both cards, and the job's warnings, before relying on it. There is no alt text on the
-LinkedIn thumbnail yet (the field name was not confirmed).
+Everything is tested against fakes that mirror each platform's documented request shape. **Confirmed live on
+2026-10-19** (the "Where an OS Idea Started" post, first post with an `image:`): the LinkedIn thumbnail upload and
+`thumbnail` field, the Bluesky `uploadBlob` and `external.thumb`, and Mastodon's `og:image` card all produced a
+card with the picture, with no fallback warnings in the run. Checked from outside: Bluesky's public AppView returns a
+`thumb`, Mastodon's status has a `card.image`, and LinkedIn's public post page serves our card from its own media
+host. Still not confirmed against the live services: LinkedIn API version `202609` beyond that one post, its
+title/description length limits (set conservatively), and thumbnail alt text on LinkedIn (the field name was not
+confirmed, so none is sent).
 
 ## Files
 Pages also carry Open Graph tags (`_layouts/default.html`), so shared links get a proper card.
