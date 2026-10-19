@@ -24,6 +24,24 @@ social:                              # optional: your own wording per platform
 The link each platform shares carries `?utm_source=<platform>&utm_medium=social`, so analytics tools that read
 campaign parameters can tell the platforms apart. The post's own URL (and the idempotency key) stay untagged.
 
+## The card's picture
+
+Set `image:` in the front matter (the same field the page's Open Graph tags use) to give the shared link a picture:
+
+```yaml
+image: /images/my-post.png           # 1200x630 PNG or JPEG, kept under images/
+```
+
+- **Mastodon** builds its card from the page's `og:image`, so the field alone is enough.
+- **LinkedIn** and **Bluesky** do not scrape the page, so after the post is live the script fetches the image from
+  the site and uploads it (LinkedIn Images API / Bluesky `uploadBlob`) as the card's thumbnail.
+- The image must be on `dlockamy.com` (nothing else is fetched), be a real PNG or JPEG (checked by content), and stay
+  under 5 MB (950 KB for Bluesky, which refuses larger blobs). 1200x630 (about 1.91:1) is the size LinkedIn shows large.
+- **A picture problem never blocks a post.** If the image is missing, too big, the wrong type, or an upload fails, the
+  job logs a warning and posts the text-only card. If a platform rejects a post *with* a thumbnail (a definite 4xx, so
+  nothing was created), it retries once without it.
+- `syndicate.py preview` prints the image it found, or says there is none.
+
 Only **new** files in `_posts/` trigger it. Editing an old post never re-posts it.
 If a post has `ai_assisted: true`, each platform's text ends with "Drafted with AI assistance."
 To drop that line, set the repository variable `SYNDICATE_DISCLOSE_AI` to `0`.
@@ -106,8 +124,11 @@ Instagram, Threads) is not supported either, for the same dormant-account reason
 ## Known unknowns (honest list)
 Everything is tested against fakes that mirror each platform's documented request shape. Not yet confirmed
 against the live services: LinkedIn API version `202609` and its title/description length limits (set
-conservatively) and a LinkedIn link card without a thumbnail image (the Posts API does
-not scrape the URL, so the card is text only; adding a thumbnail needs LinkedIn's Images API).
+conservatively); **the LinkedIn thumbnail** (the `initializeUpload` / upload / `thumbnail` field flow, written from
+LinkedIn's documented Images API and not yet run against the live service; the retry-without-thumbnail fallback
+exists because of this); and **the Bluesky thumbnail** (`uploadBlob` then `external.thumb`). The first real post with
+an `image:` is the test: check both cards, and the job's warnings, before relying on it. There is no alt text on the
+LinkedIn thumbnail yet (the field name was not confirmed).
 
 ## Files
 Pages also carry Open Graph tags (`_layouts/default.html`), so shared links get a proper card.

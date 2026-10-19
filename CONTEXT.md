@@ -21,6 +21,7 @@ not a template for Lockamy Studios products. Keep it separate from Digital Zen.
 - **Filename and slug:** `_posts/YYYY-MM-DD-<short-slug>.md`, 3 to 6 words. **Never change the slug of a published post** (links, the feed and shared URLs depend on it); retitle only.
 - Front matter: `layout: post`, `title`, `date`, `categories`, `tags`, `excerpt`, `author: Douglas Lockamy`, `ai_assisted: true` when an agent drafted it.
 - **Cross-posting (opt-in):** add `syndicate: true` (or a list of `linkedin`, `bluesky`, `mastodon`) to a post's front matter to have the push share it. Nothing posts without it. See `.github/SYNDICATION.md`.
+- **Preview image:** set `image: /images/<name>.png` (1200x630, PNG or JPEG) so the shared link gets a large card. It feeds the page's `og:image` and, for LinkedIn and Bluesky, is uploaded by the syndication script (see `.github/SYNDICATION.md`). Without it every card is text only.
 - Images live in `images/`; the CSS keeps them inside the column (`.post__content img { max-width: 100% }`). **Look at the rendered page before publishing.**
 - Build check: `docker build -t dlockamy-site .` then `docker run --rm -v "$PWD":/site -v /tmp/out:/out dlockamy-site bundle exec jekyll build -d /out` (restore `Gemfile.lock` afterwards: the container rewrites it).
 - Never publish secrets, IPs, internal hostnames beyond what earlier posts already use, private repo names, or anything the post cannot trace to a source.
