@@ -6,6 +6,7 @@ published: false # DRAFT: remove this line when ready to publish
 categories: [slashbuilder, ai]
 tags: [slashbuilder, kits, beos, architecture, ai-assisted-development, series]
 excerpt: "Part 2 of the series on the platform I'm building with AI. Before any status report, a plain answer to what a Kit is: a small building block named for the thing it owns, with a stable interface, a list of things it refuses to do, and a rule that products compose Kits and never fork them."
+image: /images/what-a-kit-is.png
 author: Douglas Lockamy
 ai_assisted: true
 ---
@@ -101,4 +102,5 @@ describing what's there and not what I hope is there.
 
 The Kits also need a way to talk to each other and to other machines, and that's
 the next post: **Hearth**, the protocol, and where the Plan 9 half of the
-inspiration comes back in.
+inspiration comes back in. The specification is already public if you'd like to read ahead:
+[github.com/slash-builder/hearth](https://github.com/slash-builder/hearth).
