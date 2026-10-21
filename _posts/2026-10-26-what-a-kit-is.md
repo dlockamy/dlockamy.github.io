@@ -2,13 +2,13 @@
 layout: post
 title: "What a Kit Is"
 date: 2026-10-26
-published: false # DRAFT: remove this line when ready to publish
 categories: [slashbuilder, ai]
 tags: [slashbuilder, kits, beos, architecture, ai-assisted-development, series]
 excerpt: "Part 2: what I mean by a Kit, the rules every one follows, and why that shape suits building with AI."
 image: /images/what-a-kit-is.png
 author: Douglas Lockamy
 ai_assisted: true
+syndicate: true
 ---
 
 In [Part 1](/posts/2026/10/19/where-an-os-idea-started/) I said the idea I
