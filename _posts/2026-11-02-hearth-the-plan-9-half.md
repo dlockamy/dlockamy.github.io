@@ -2,11 +2,32 @@
 layout: post
 title: "Hearth: The Plan 9 Half"
 date: 2026-11-02
-published: false # DRAFT: remove this line when ready to publish
 categories: [slashbuilder, ai]
 tags: [slashbuilder, hearth, plan9, 9p, protocol, ai-assisted-development, series]
 excerpt: "Part 3: Hearth, a small open protocol that borrows 9P's discipline and applies it to a household instead of a data center."
 image: /images/hearth-the-plan-9-half.png
+syndicate: true
+social:
+  linkedin: |-
+    I'm not claiming a new idea. I'm claiming the old one still works.
+
+    Part 3 of my series on the platform I'm building with AI is about Hearth, a small open protocol that borrows the discipline of Plan 9's 9P and applies it to a household instead of a data center. Capability grants instead of accounts, and a thin wire contract instead of a platform.
+
+    The post covers what Hearth takes from 9P, the two things it adds, and where it still falls short. The spec is public, so you can check every claim against it.
+
+    Drafted with AI assistance.
+  bluesky: |-
+    Plan 9's 9P showed that one small protocol could speak to everything, local or remote. Hearth borrows that discipline for a household: 24 message types in version 1, a goal of staying under 30, and every request answered exactly once.
+
+    Part 3 of the series. Drafted with AI assistance.
+  mastodon: |-
+    Hearth: The Plan 9 Half (Part 3 of the series)
+
+    Hearth is a small open protocol that borrows 9P's discipline and applies it to a household instead of a data center. 24 message types in version 1, every request answered exactly once, and files kept off the hub. What it takes from 9P, what it adds, and where it still falls short.
+
+    Drafted with AI assistance.
+
+    #Plan9 #9P #OpenProtocol #FOSS
 author: Douglas Lockamy
 ai_assisted: true
 ---
