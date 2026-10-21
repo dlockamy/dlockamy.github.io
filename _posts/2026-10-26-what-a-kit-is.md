@@ -5,7 +5,7 @@ date: 2026-10-26
 published: false # DRAFT: remove this line when ready to publish
 categories: [slashbuilder, ai]
 tags: [slashbuilder, kits, beos, architecture, ai-assisted-development, series]
-excerpt: "Part 2 of the series on the platform I'm building with AI. Before any status report, a plain answer to what a Kit is: a small building block named for the thing it owns, with a stable interface, a list of things it refuses to do, and a rule that products compose Kits and never fork them."
+excerpt: "Part 2: what I mean by a Kit, the rules every one follows, and why that shape suits building with AI."
 image: /images/what-a-kit-is.png
 author: Douglas Lockamy
 ai_assisted: true
@@ -85,13 +85,13 @@ In practice it has looked like this:
   have called finished.
 - **Applications that push back.** When an application is built on a Kit and
   hits a gap, the finding gets written down against the Kit. In one case an
-  application found real problems in a Kit's planner on its first day of use,
-  and they were fixed the same day.
+  application found real problems in a Kit on its first day of use, and they
+  were fixed the same day.
 
 Here's where it goes wrong, and it's a good example of the caveats I promised in
 Part 1: a Kit can be written much faster than its neighbours can be reconciled.
-I currently have documentation that disagrees with itself about how many Kits
-there are. Each page was right on the day it was written. That's a real cost of
+For a while I had documentation that disagreed with itself about how many Kits
+there were. Each page was right on the day it was written. That's a real cost of
 building quickly with AI, and I'd rather tell you about it than hide it.
 
 ## Where this is going
