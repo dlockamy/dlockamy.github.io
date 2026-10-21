@@ -5,11 +5,18 @@ date: 2026-11-02
 published: false # DRAFT: remove this line when ready to publish
 categories: [slashbuilder, ai]
 tags: [slashbuilder, hearth, plan9, 9p, protocol, ai-assisted-development, series]
-excerpt: "Part 3 of the series on the platform I'm building with AI. Part 1 was the BeOS half of the inspiration. This is the Plan 9 half: Hearth, a small open protocol that borrows 9P's discipline and applies it to a household instead of a data center."
+excerpt: "Part 3: Hearth, a small open protocol that borrows 9P's discipline and applies it to a household instead of a data center."
 image: /images/hearth-the-plan-9-half.png
 author: Douglas Lockamy
 ai_assisted: true
 ---
+
+<!-- PROPOSED, DJ TO CONFIRM: optional opening that calls back to the Octopus demo in Part 1. Keep, rewrite or cut. It does not claim the demo runs on Hearth today. -->
+The demo that hooked me in Part 1 ended with a picture. One machine told another
+machine's webcam to take a photo, and the photo showed up as the front window on
+a third. That's a fair test for any protocol meant to connect the devices in a
+house, so I'll come back to it further down.
+<!-- END PROPOSED -->
 
 In [Part 1](/posts/2026/10/19/where-an-os-idea-started/) I said the idea came
 from two places. BeOS gave me the Kit: a system made of parts with clear edges,
@@ -25,8 +32,8 @@ you can check what I say here against it:
 ## What it is
 
 Hearth is an open protocol for distributed personal resources. The short
-version in its own README is "9P-inspired: Plan 9's addressing model, reapplied
-to a household instead of a data center. Capability grants instead of accounts;
+version in its own README is "9P-inspired — Plan 9's addressing model, reapplied
+to a household instead of a data center. Capability-grants instead of accounts;
 a thin wire contract instead of a platform."
 
 It sells nothing. It's stewarded by SlashBuilder, the open-source side of the
@@ -42,27 +49,35 @@ format. What I took is the discipline, and the spec says so in as many words:
 - **A small, fixed set of message types.** In version 1 there are 24 envelope
   variants: nine request/response pairs, one error, and five server pushes. The
   goal is to stay under 30 for the life of the protocol. The number matters less
-  than the habit: every new message type has to earn its place, and the usual
+  than the habit. Every new message type has to earn its place, and the usual
   answer is that it should have been a new *step* of an existing interaction
   instead.
-- **Every request gets exactly one answer.** Requests carry a tag; the response
-  carries the same tag. Anything the server pushes on its own is a visibly
-  separate category with no tag at all. There is no fourth kind of message.
+- **Every request gets exactly one answer.** A request carries a tag, and its
+  answer carries the same tag.
 - **Errors are first-class.** Any request can be answered with an error carrying
   its tag.
-- **Multi-step conversations use a handle the server hands out**, rather than
-  inventing a new message type per step. That's the move 9P's `walk` makes, and
-  it's the one I find myself reaching for most.
 - **It's versioned from message one.** Version negotiation happens before any
   other traffic.
 
-If you've read the 9P papers, none of this will surprise you. That's the point.
-I'm not claiming a new idea; I'm claiming the old one still works.
+If you've read the 9P papers, none of that will surprise you. That's the point.
+I'm not claiming a new idea. I'm claiming the old one still works.
+
+Two things are Hearth's, not 9P's, and a 9P reader should hear it from me first.
+9P is strictly request and response: the server only ever answers. Hearth adds
+**server pushes** (a delivery, a presence change, a pairing result), and they
+carry tag 0 so they can never be mistaken for an answer. Requests, answers and
+pushes are the whole grammar. There is no fourth kind of message.
+
+The second is the handle. Multi-step conversations, like pairing a new device,
+use **a handle the server hands out** and carry it across the steps, rather than
+inventing a new message type per step. That borrows the shape of 9P's `walk`,
+but in real 9P the client picks the handle (the fid). In Hearth the server does.
+It's the move I find myself reaching for most.
 
 ## The two layers
 
-The standard has two layers, and both are defined in the same document so a
-reader never has to chase a second spec. The **base layer** is the envelope, tag
+The standard has two layers, defined in one specification, with encryption
+details in a companion document. The **base layer** is the envelope, tag
 correlation, the request/response/push grammar, errors and addressing. The
 **fabric layer** is everything that's only true because the message crossed a
 network: sessions, publish and subscribe, device pairing, presence, catching up
@@ -77,34 +92,48 @@ nothing else. What gets sent is never translated on the way.
 
 The network leg is a WebSocket carrying one protobuf envelope per binary frame,
 with a 1 MiB cap per message. Anything bigger, like a file, deliberately never
-goes through the hub. The spec points to peer-to-peer transfer or to references
-into content-addressed storage instead. A hub that only relays small messages has much less to carry, and much less to
-lose.
+goes through the hub. The spec plans for files to move peer-to-peer or as
+references into content-addressed storage, in a later version. A hub that only
+relays small messages has much less to carry, and much less to lose.
 
-## What I'd rather you knew
+<!-- PROPOSED, DJ TO CONFIRM: the Octopus callback, paired with the opening above. Cut both or neither. -->
+That's where the Octopus demo comes back. Asking a camera to take a picture,
+and telling a third machine the picture is ready, are small messages, and those
+are exactly what the protocol is built to carry. The picture itself is a file,
+and moving files isn't in version 1. So Hearth's answer to that demo is half an
+answer for now, and the half it leaves out is the half it means to keep off the
+hub.
+<!-- END PROPOSED -->
 
-I promised in Part 1 to tell you where this goes wrong, so here are the real
-ones, taken from the repository's own notes.
+## Where it falls short
 
-- **It still carries the old name.** The spec is titled "Quickring Wire
-  Protocol," the schema package is `quickring.v1`, and the WebSocket subprotocol
-  string says the same. A coordinated rename is tracked, and it's a breaking
-  change, so it hasn't happened yet.
+Part 1 said I'd be specific about what broke. These are the rough edges, and
+you can check each one in the repository.
+
+- **It still carries the old name.** As of late October 2026, the spec is titled
+  "Quickring Wire Protocol," the schema package is `quickring.v1`, and the
+  WebSocket subprotocol string says the same. A coordinated rename is tracked.
+  The rename changes the identifiers that carry the version, so it is a
+  breaking change, and it hasn't happened yet.
 - **The documents lag the code in places.** The encryption design document was
-  written before any of it was implemented and kept saying so for weeks after it
-  shipped. It has since been corrected where I checked it against running code,
-  and the repository says plainly that other sections have not been re-audited.
-  I'd rather a spec admit that than look finished.
+  written before any of it was implemented, and it kept saying so for nearly
+  three weeks after the first of it shipped. Its status note has since been
+  corrected against running code, and it says plainly that the other sections
+  have not been re-audited. Better a spec that admits that than one that looks
+  finished.
 - **Some of it is still a design.** The spec lists what's deliberately not in
   version 1, including file transfer, federation between hubs and team topics.
-  Those are decisions to wait, not gaps I forgot.
+  Each one has a later version number next to it.
 
 ## Why it belongs in this series
 
-The Kits are the parts, and Hearth is how the parts, and the machines they run
-on, find and talk to each other without anyone having to trust a platform. A Kit
-that carries messages between processes and a protocol that carries them between
-machines are meant to be the same shape on purpose.
+The Kits are the parts, and Hearth is how the machines they run on find and
+talk to each other without anyone having to trust a platform. A Kit that carries
+messages between processes and a protocol that carries them between machines
+are meant to be the same shape on purpose. The dependency only runs one way.
+Hearth doesn't need the Kits; the Kit conforms to Hearth, not the other way
+round.
 
-Next I want to go back to the AI side of the experiment and look at what building
-this way has actually cost and bought.
+At some point I want to come back to the AI side of this and look at what
+building this way has actually cost, and what it's bought. Until then, the spec
+is the best place to poke holes in any of the above.
