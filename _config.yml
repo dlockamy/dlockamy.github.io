@@ -38,3 +38,4 @@ exclude:
   - README.md
   - .git
   - dlockamy-jekyll/
+  - drafts/   # working notes for unpublished posts; never served
