@@ -156,7 +156,7 @@ keep the bullet, change "a documentation site" to "a documentation repository",
 and point the line at `https://github.com/slash-builder/kit-book`.
 
 **If the App Context Kit repo is not public at publish time.** Delete the "Read
-the Application Kit" line and the repository bullet.
+the App Context Kit" line and the repository bullet.
 
 **If neither is public.** Also change the intro's "They've started opening, so
 this version also shows one Kit in practice." to "They're about to open, so this
