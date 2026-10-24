@@ -11,7 +11,7 @@ builder's own notes and not re-run here. **carried** = an account from DJ's
 
 Source shorthand:
 
-- `AK` = `slash-builder/application-kit`, branch `public/release-prep`
+- `AK` = `slash-builder/app-context-kit`, branch `public/release-prep`
   (`f88d406`), `README.md`
 - `KB` = `slash-builder/kit-book` at `main` (`e94ff81`)
 - `MAT` = vault `wiki/ideas/application-kit-blog-material-2026-10-24.md`
@@ -49,7 +49,7 @@ Source shorthand:
 | 23 | Plenty for the stopwatch and the handoff, only just enough for live play | `AK` ("enough for a signal and a handoff, and only just enough for live play") | reported (builder's judgement) |
 | 24 | For the notepad, a thin shell around about 700 lines of app code | `AK` ("a 22-line shell around about 700 lines of app code") | reported |
 | 25 | Grow next: acknowledgements, large transfers, catching up a late arrival | `AK` (no acknowledgement, large transfer, replay); `MAT` row 7 | reported (the "next" is an opinion) |
-| 26 | A seventh app: Flutter UI over a Rust core, using the Application Kit's Rust side and the Kit that holds bytes | `KB` `apps/notes_rust/README.md` (Application Kit `adopt` API, Storage Kit) | verified |
+| 26 | A seventh app: Flutter UI over a Rust core, using the App Context Kit's Rust side and the Kit that holds bytes | `KB` `apps/notes_rust/README.md` (Application Kit `adopt` API, Storage Kit) | verified |
 | 27 | In a test on macOS, a one-byte edit of a 10 MiB note synced to a second copy moved 0.46% | `KB` `apps/notes_rust/README.md`, Measurements: "one byte changed: 48,395 bytes (0.46%)", `integration_test`, macOS debug, 2026-10-24 | reported (not re-run) |
 | 28 | Not verified: other machines, a real network, a Linux window, release builds | `AK` Limits; `KB` `apps/notes_rust/README.md` Limits | verified (that they are listed as not verified) |
 | 29 | Differently briefed AI reviewers (data modeler, security engineer) find different problems | `D0` | carried |
@@ -59,9 +59,9 @@ Source shorthand:
 | 33 | The Kit Book is a documentation site in the spirit of the Be Book | `KB` `README.md` "About the book"; `Makefile` (`SITE_DOMAIN ?= kits.slashbuilder.com`) | verified (content); **site not live** (see B) |
 | 34 | A status card for every registry Kit, 19, public or not | `KB` `book/30-kits/README.md` ("19 Kits", generated from registry `389c4a5`) | verified |
 | 35 | The cards say which are real code and which are design documents, as the registry records them | `KB` `book/30-kits/README.md` ("Has real code today", status sections) | verified |
-| 36 | The Application Kit's reference pages are in the book; no other Kit has any yet | `KB` `README.md` Status note | verified |
+| 36 | The App Context Kit's reference pages are in the book; no other Kit has any yet | `KB` `README.md` Status note | verified |
 | 37 | Demo apps and a Makefile that sets up, tests and builds them | `KB` `README.md`; `Makefile` (`setup`, `test-fast`, `apps`) | verified |
-| 38 | The Application Kit's repository has a Limits section | `AK` "Limits" | verified (content); **repo private** (see B) |
+| 38 | The App Context Kit's repository has a Limits section | `AK` "Limits" | verified (content); **repo private** (see B) |
 | 39 | The Hearth specification was already public | `curl` 200 and `gh repo view slash-builder/hearth` = PUBLIC, 2026-10-24; linked from `D0` | verified |
 | 40 | "They've started opening"; "What's real today" | DJ's direction of 2026-10-25 | **not true on 2026-10-24**: true only once B passes |
 
@@ -73,7 +73,7 @@ about how many Kits there are" (replaced by row 31).
 ## B. GO-LIVE checklist
 
 State on 2026-10-24: `kits.slashbuilder.com` does not resolve (curl code 000);
-`github.com/slash-builder/kit-book` and `github.com/slash-builder/application-kit`
+`github.com/slash-builder/kit-book` and `github.com/slash-builder/app-context-kit`
 both return 404 (both PRIVATE per `gh`); `github.com/slash-builder/hearth`
 returns 200.
 
@@ -94,15 +94,15 @@ Each item must pass on publish day. If an item fails, use section C.
    gh repo view slash-builder/kit-book --json visibility -q .visibility
    ```
 
-3. **The Application Kit repository is public, under that name, with the
+3. **The App Context Kit repository is public, under that name, with the
    public release on its default branch.** Expect `200`, `PUBLIC`,
-   `application-kit`, `# Application Kit`, and a `## Limits` line:
+   `app-context-kit`, `# App Context Kit`, and a `## Limits` line:
 
    ```sh
-   curl -sS -o /dev/null -w '%{http_code}\n' https://github.com/slash-builder/application-kit
-   gh repo view slash-builder/application-kit --json visibility,name -q '.visibility + " " + .name'
-   curl -sS https://raw.githubusercontent.com/slash-builder/application-kit/HEAD/README.md | head -1
-   curl -sS https://raw.githubusercontent.com/slash-builder/application-kit/HEAD/README.md | grep -n '^## Limits'
+   curl -sS -o /dev/null -w '%{http_code}\n' https://github.com/slash-builder/app-context-kit
+   gh repo view slash-builder/app-context-kit --json visibility,name -q '.visibility + " " + .name'
+   curl -sS https://raw.githubusercontent.com/slash-builder/app-context-kit/HEAD/README.md | head -1
+   curl -sS https://raw.githubusercontent.com/slash-builder/app-context-kit/HEAD/README.md | grep -n '^## Limits'
    ```
 
    A redirect (301) from a renamed repository is not a pass: update the post.
@@ -131,7 +131,7 @@ Each item must pass on publish day. If an item fails, use section C.
 8. **Remove `published: false`.** Decide `syndicate: true` separately (not set
    on purpose).
 9. **DJ accepts what the linked pages say.** The post never names Venue, but
-   the Kit Book `README.md`, its catalog, and the Application Kit `README.md`
+   the Kit Book `README.md`, its catalog, and the App Context Kit `README.md`
    all name Venue as a provisional resource broker, and the catalog lists every
    registry Kit (including banked and pending ones). Linking makes those public
    too. Also decide `SITE_INDEXABLE` in the Kit Book `Makefile` (it is `0`,
@@ -144,20 +144,18 @@ Each item must pass on publish day. If an item fails, use section C.
 
 ## C. Sentences that depend on DJ's pending decisions
 
-**If the Kit is renamed.** "Application Kit" appears in the post seven times;
-`grep -n "Application Kit" _posts/2026-10-26-what-a-kit-is.md` finds them all.
-Also rewrite: "The Kit I wanted first from BeOS was the Application Kit" (the
-BeOS link only holds if the new name still echoes it) and "The name is
-provisional, because it echoes BeOS and I haven't checked it against existing
-product names." If the name is ruled final, replace that sentence with: "The
-name is settled, and yes, it's borrowed from BeOS."
+**The Kit was renamed (DJ, 2026-10-25).** After a naming ruling it is now **App Context Kit**, repo `slash-builder/app-context-kit`. The post says
+"Application Kit" only where it means BeOS's (two places in the worked example). The post carries the provisional-name and lineage sentence from the ruling:
+"a working name that may change before version 1.0. It borrows its idea from the BeOS Application Kit, but it is not a reimplementation of it and is not
+affiliated with Haiku." If the name changes again, `grep -n "App Context Kit\|app-context-kit" _posts/2026-10-26-what-a-kit-is.md drafts/part-2-kit-book-notes.md`
+finds every place.
 
 **If the Kit Book is not public at publish time.** Delete the "Read the Kit
 Book" line and the Kit Book bullet. If the repo is public but the site is not,
 keep the bullet, change "a documentation site" to "a documentation repository",
 and point the line at `https://github.com/slash-builder/kit-book`.
 
-**If the Application Kit repo is not public at publish time.** Delete the "Read
+**If the App Context Kit repo is not public at publish time.** Delete the "Read
 the Application Kit" line and the repository bullet.
 
 **If neither is public.** Also change the intro's "They've started opening, so
@@ -189,7 +187,7 @@ item 1 passes and DJ prefers it.)
 > It has a stable interface. Products compose Kits and never fork them. The more
 > mature ones have invariants, each backed by a test.
 >
-> Then one Kit in practice: the Application Kit (the name is provisional). I
+> Then one Kit in practice: the App Context Kit (a working name). I
 > wrote the contract first and had it built twice, in Dart and Rust, against one
 > set of shared test cases. The second build found about a dozen things the
 > first had decided silently. Six small apps went on top, and the helper code
@@ -202,7 +200,7 @@ item 1 passes and DJ prefers it.)
 
 **Bluesky** (287 characters with the link; limit 300)
 
-> SlashBuilder Kits, Part 2: what a Kit is, and one built twice. The Application Kit got a written contract, then Dart and Rust builds against 61 shared test cases. The Rust one found about a dozen things the Dart one decided silently.
+> SlashBuilder Kits, Part 2: what a Kit is, and one built twice. App Context Kit got a written contract, then Dart and Rust builds against 61 shared test cases. The Rust one found about a dozen things the Dart one decided silently.
 >
 > https://dlockamy.com/posts/2026/10/26/what-a-kit-is/
 
@@ -210,7 +208,7 @@ item 1 passes and DJ prefers it.)
 
 > Part 2 of the SlashBuilder Kits series: what a Kit is.
 >
-> Five rules, then one Kit in practice. The Application Kit (provisional name) was specced first and built twice, in Dart and Rust, against 61 shared test cases. Six small apps on top. The helper code they wrote for themselves went 727, 330, 777, then 164 lines.
+> Five rules, then one Kit in practice. App Context Kit (working name) was specced first and built twice, in Dart and Rust, against 61 shared test cases. Six small apps on top. The helper code they wrote for themselves went 727, 330, 777, then 164 lines.
 >
 > Not verified yet: other machines, a real network, release builds.
 >

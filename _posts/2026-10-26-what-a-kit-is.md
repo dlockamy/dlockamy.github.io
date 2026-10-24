@@ -6,7 +6,7 @@ date: 2026-10-26
 published: false # DRAFT: remove this line when ready to publish
 categories: [slashbuilder, ai]
 tags: [slashbuilder, kits, beos, architecture, ai-assisted-development, series]
-excerpt: "Part 2 of the series on the platform I'm building with AI. What a Kit is: a small building block named for the thing it owns, with a stable interface, a list of things it refuses to do, and a rule that products compose Kits and never fork them. Then one Kit in practice, built twice, and the Kits starting to open."
+excerpt: "Part 2: what I mean by a Kit, the rules every one follows, and why that shape suits building with AI."
 image: /images/what-a-kit-is.png
 author: Douglas Lockamy
 ai_assisted: true
@@ -55,8 +55,10 @@ badly, on a deadline.
 ## One Kit in practice
 
 The Kit I wanted first from BeOS was the Application Kit, the one that made an
-app an app: a name, a place to run, a way to quit. The name is provisional,
-because it echoes BeOS and I haven't checked it against existing product names.
+app an app: a name, a place to run, a way to quit. Mine is called App Context
+Kit, a working name that may change before version 1.0. It borrows its idea from
+the BeOS Application Kit, but it is not a reimplementation of it and is not
+affiliated with Haiku.
 
 Every app I built solved the same small problems again: where its files and
 settings live, how to run in a test without touching the real ones, who else is
@@ -93,7 +95,7 @@ lines of the app's own code, which tells me what the Kit should grow next:
 acknowledgements, large transfers, and a way for a late arrival to catch up.
 
 A seventh app tests the other half: a Flutter interface over a Rust core, using
-the Application Kit's Rust side and the Kit that holds bytes. In a test on
+the App Context Kit's Rust side and the Kit that holds bytes. In a test on
 macOS, syncing a one-byte edit of a 10 MiB note to a second copy moved 0.46% of
 the note.
 
@@ -128,10 +130,10 @@ What's real today:
 - **The Kit Book**, a documentation site in the spirit of the Be Book. It has a
   status card for every Kit in the registry, 19 of them, public or not, saying
   which are real code and which are still design documents, as the registry
-  records them. It also has the Application Kit's reference pages (no other Kit
+  records them. It also has the App Context Kit's reference pages (no other Kit
   has any yet), the demo apps, and a Makefile that sets up, tests and builds
   them.
-- **The Application Kit's repository**, provisional name, Limits section and all.
+- **The App Context Kit's repository**, provisional name, Limits section and all.
 - **The Hearth specification**, which was already public.
 
 A few more Kits may follow. I'll name them when they're ready.
@@ -140,9 +142,9 @@ A few more Kits may follow. I'll name them when they're ready.
 
 **Read the Kit Book:** [kits.slashbuilder.com](https://kits.slashbuilder.com)
 
-<!-- GO-LIVE: before publishing, https://github.com/slash-builder/application-kit must be public and return 200, its default branch must carry the public release (README titled "Application Kit", with a Limits section), and the repository must still be named application-kit. If not, delete the "Read the Application Kit" line below AND the repository bullet above (see drafts/part-2-kit-book-notes.md, section C). Delete this comment before publishing. -->
+<!-- GO-LIVE: before publishing, https://github.com/slash-builder/app-context-kit must be public and return 200, its default branch must carry the public release (README titled "App Context Kit", with a Limits section and the provisional-name sentence), and the repository must be named app-context-kit. If not, delete the "Read the App Context Kit" line below AND the repository bullet above (see drafts/part-2-kit-book-notes.md, section C). Delete this comment before publishing. -->
 
-**Read the Application Kit:** [github.com/slash-builder/application-kit](https://github.com/slash-builder/application-kit)
+**Read the App Context Kit:** [github.com/slash-builder/app-context-kit](https://github.com/slash-builder/app-context-kit)
 
 The Kits also need a way to talk to each other and to other machines, and that's
 the next post: **Hearth**, the protocol, and where the Plan 9 half of the
