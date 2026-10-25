@@ -51,7 +51,7 @@ Source shorthand:
 | 25 | Grow next: acknowledgements, large transfers, catching up a late arrival | `AK` (no acknowledgement, large transfer, replay); `MAT` row 7 | reported (the "next" is an opinion) |
 | 26 | A seventh app: Flutter UI over a Rust core, using the App Context Kit's Rust side and the Kit that holds bytes | `KB` `apps/notes_rust/README.md` (Application Kit `adopt` API, Storage Kit) | verified |
 | 27 | In a test on macOS, a one-byte edit of a 10 MiB note synced to a second copy moved 0.46% | `KB` `apps/notes_rust/README.md`, Measurements: "one byte changed: 48,395 bytes (0.46%)", `integration_test`, macOS debug, 2026-10-24 | reported (not re-run) |
-| 28 | Not verified: other machines, a real network, a Linux window, release builds | `AK` Limits; `KB` `apps/notes_rust/README.md` Limits | verified (that they are listed as not verified) |
+| 28 | The apps build and launch on Linux, headless in a container; not verified: other machines, a real network, a real Linux desktop, signed or packaged release builds | `KB` `make linux-smoke` results (7 apps, release builds, Ubuntu 24.04 arm64 container, Xvfb), `AK` Limits | verified (container run re-read by the parent: screenshots and results table); the not-verified list is as stated in the Limits |
 | 29 | Differently briefed AI reviewers (data modeler, security engineer) find different problems | `D0` | carried |
 | 30 | Mutation testing has found real bugs in code I'd have called finished | `D0` | carried |
 | 31 | Generating a card for every Kit showed registry entries disagreeing with their repositories: one claims a language its repo lacks; others marked design have skeleton code with tests | `REG`, "Status that disagrees with the repository" (Manifest Kit; Platform, Device, Score, App Store). No Kit is named in the post | verified (by `REG`, from repository trees) |
@@ -210,7 +210,7 @@ item 1 passes and DJ prefers it.)
 >
 > Five rules, then one Kit in practice. App Context Kit (working name) was specced first and built twice, in Dart and Rust, against 61 shared test cases. Six small apps on top. The helper code they wrote for themselves went 727, 330, 777, then 164 lines.
 >
-> Not verified yet: other machines, a real network, release builds.
+> Not verified yet: other machines, a real network, a real Linux desktop, signed release builds.
 >
 > #BeOS #RustLang #Dart #Flutter
 >

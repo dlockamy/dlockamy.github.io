@@ -99,8 +99,9 @@ the App Context Kit's Rust side and the Kit that holds bytes. In a test on
 macOS, syncing a one-byte edit of a 10 MiB note to a second copy moved 0.46% of
 the note.
 
-Not verified yet: copies on different machines, a real network, a Linux window,
-and release builds.
+The apps also build and launch on Linux, headless in a container. Not verified
+yet: copies on different machines, a real network, a real Linux desktop, and
+signed or packaged release builds.
 
 ## Why Kits and AI suit each other
 
