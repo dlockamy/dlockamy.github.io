@@ -1,5 +1,7 @@
 # Part 2 ("What a Kit Is"): Kit Book revision notes
 
+> **Update 2026-10-24 (final name lock, CI).** The naming agent ruled App Context Kit and Venue final, so the post no longer says "a working name that may change"; it keeps the BeOS lineage sentence only. The repository bullet now says its tests run on GitHub Actions (Linux, macOS, Windows) and that the Rust crate is not on crates.io yet. **Before publishing**, the public repo's latest CI run on `main` must be green on all three, or that parenthesis comes out. Rust crate name `slashbuilder-app-context-kit` is reserved by the release workflow only after DJ's go; nothing is published.
+
 Working notes for `_posts/2026-10-26-what-a-kit-is.md` on branch
 `draft/part-2-kit-book`. Excluded from the Jekyll build (`_config.yml`,
 `exclude: drafts/`), so this file is never served. Written 2026-10-24.

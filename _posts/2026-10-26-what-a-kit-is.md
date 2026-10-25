@@ -56,9 +56,8 @@ badly, on a deadline.
 
 The Kit I wanted first from BeOS was the Application Kit, the one that made an
 app an app: a name, a place to run, a way to quit. Mine is called App Context
-Kit, a working name that may change before version 1.0. It borrows its idea from
-the BeOS Application Kit, but it is not a reimplementation of it and is not
-affiliated with Haiku.
+Kit. It borrows its idea from the BeOS Application Kit, but it is not a
+reimplementation of it and is not affiliated with Haiku.
 
 Every app I built solved the same small problems again: where its files and
 settings live, how to run in a test without touching the real ones, who else is
@@ -134,7 +133,9 @@ What's real today:
   records them. It also has the App Context Kit's reference pages (no other Kit
   has any yet), the demo apps, and a Makefile that sets up, tests and builds
   them.
-- **The App Context Kit's repository**, provisional name, Limits section and all.
+- **The App Context Kit's repository**, with its tests running on GitHub Actions
+  (Linux, macOS and Windows) and a Limits section that says what isn't verified.
+  The Rust crate isn't on crates.io yet.
 - **The Hearth specification**, which was already public.
 
 A few more Kits may follow. I'll name them when they're ready.
@@ -143,7 +144,7 @@ A few more Kits may follow. I'll name them when they're ready.
 
 **Read the Kit Book:** [kits.slashbuilder.com](https://kits.slashbuilder.com)
 
-<!-- GO-LIVE: before publishing, https://github.com/slash-builder/app-context-kit must be public and return 200, its default branch must carry the public release (README titled "App Context Kit", with a Limits section and the provisional-name sentence), and the repository must be named app-context-kit. If not, delete the "Read the App Context Kit" line below AND the repository bullet above (see drafts/part-2-kit-book-notes.md, section C). Delete this comment before publishing. -->
+<!-- GO-LIVE: before publishing, https://github.com/slash-builder/app-context-kit must be public and return 200, its default branch must carry the public release (README titled "App Context Kit", with a Limits section and the BeOS lineage sentence), and the repository must be named app-context-kit, and its latest CI run on main must be green on Linux, macOS and Windows (the bullet above says so). If not, delete the "Read the App Context Kit" line below AND the repository bullet above (see drafts/part-2-kit-book-notes.md, section C). Delete this comment before publishing. -->
 
 **Read the App Context Kit:** [github.com/slash-builder/app-context-kit](https://github.com/slash-builder/app-context-kit)
 
