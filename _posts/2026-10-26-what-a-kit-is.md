@@ -16,8 +16,8 @@ Last week I started a series about a project I've carried around for years: a
 large, modern operating system platform, assembled from reusable parts I call
 Kits. Between the day job and general life it always got pushed aside. A few
 months ago I decided to bet that AI could help one person finally get it moving,
-and it has. This series is the record of that: what the AI did, what I did, and
-what broke.
+and it has. This series is the record of that: what the AI did, what I did, what worked,
+and what broke.
 
 If you missed [Part 1](/posts/2026/10/19/where-an-os-idea-started/), here's the
 short version. Two old operating systems shaped how I think about building
