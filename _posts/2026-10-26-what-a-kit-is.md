@@ -12,13 +12,24 @@ author: Douglas Lockamy
 ai_assisted: true
 ---
 
-In [Part 1](/posts/2026/10/19/where-an-os-idea-started/) I said the idea I
-never got over from BeOS was the Kit: a system made of parts with clear edges.
-"Kit" is easy to say and easy to get wrong, so this post is about what I mean
-by it, where it comes from, and where the Kits stand today.
+Last week I started a series about a project I've carried around for years: a
+large, modern operating system platform, assembled from reusable parts I call
+Kits. Between the day job and general life it always got pushed aside. A few
+months ago I decided to bet that AI could help one person finally get it moving,
+and it has. This series is the record of that: what the AI did, what I did, and
+what broke.
 
-I first planned to keep this abstract until the Kits could open. They've
-started opening, so this version also points at real things you can read.
+If you missed [Part 1](/posts/2026/10/19/where-an-os-idea-started/), here's the
+short version. Two old operating systems shaped how I think about building
+software. BeOS stayed fast and responsive under load, and it was organized as a
+set of Kits. Plan 9 treated everything as a file and tied machines together with
+one small protocol. Neither won, and both had ideas I never got over. The Kit is
+the one this post is about.
+
+"Kit" is easy to say and easy to get wrong, so here's the plan. First, what I
+mean by a Kit and the rules every one follows. Then one Kit up close, so it
+isn't all abstract. Then an honest look at where the Kits stand today, and what
+you can actually go and read.
 
 ## Where the idea comes from
 
