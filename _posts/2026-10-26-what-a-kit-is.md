@@ -94,7 +94,7 @@ badly, on a deadline.
 The Kit I wanted first from BeOS was the Application Kit, the one that made an
 app an app: a name, a place to run, a way to quit. Mine is called App Context
 Kit. It borrows its idea from the BeOS Application Kit; it is not a
-reimplementation of it and is not affiliated with Haiku.
+reimplementation of it and is not affiliated with [Haiku](https://www.haiku-os.org/).
 
 Every app I built solved the same small problems again: where its files and
 settings live, how to run in a test without touching the real ones, who else is
