@@ -89,6 +89,16 @@ A Kit is never an application. It holds bytes, or carries messages, or knows who
 someone is: something every application would otherwise build for itself,
 badly, on a deadline.
 
+## The language rule
+
+Early on I locked one language rule: Rust for everything except the screen. The
+interface is Flutter, written in Dart, and everything underneath it is Rust,
+joined by a bridge. Storage, messaging and services all live on the Rust side.
+
+That rule has a consequence for the Kits. An app has a Dart half and a Rust half,
+and both need the same answers to the same questions. So a Kit that apps touch
+directly has to exist in both languages and behave identically in each.
+
 ## One Kit, up close
 
 The Kit I wanted first from BeOS was the Application Kit, the one that made an
