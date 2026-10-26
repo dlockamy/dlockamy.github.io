@@ -50,12 +50,21 @@ that piece.
 
 ## The rules
 
-**A Kit is named for the thing it owns.** Not the field it lives in. I had a Kit
-named after a whole area of technology, and within weeks a request came up to
-put something in it that its own rules forbade, only because the name made it
-sound like it belonged. A name that describes a field invites everything in the
-field. A name that describes an artifact (bytes, messages, a manifest) tells you
-what doesn't belong. I renamed it for what it actually owns.
+**A Kit is named for the thing it owns.** Not the field it lives in. The clearest
+lesson here came from a Kit I first called the AI Kit. It decides where and how
+AI models run, so the name seemed obvious. Within weeks a request came up to
+keep an AI agent's memory inside it. The name made that sound reasonable, since
+memory is AI too, but the Kit's own rules forbid it. Running a model and
+remembering things are different jobs with different guarantees, and memory
+needs protections of its own, like real deletion. "AI" described a whole field,
+and everything in the field looked like it belonged.
+
+So I renamed it the Inference Kit, after the one thing it actually does, and
+gave memory a sibling Kit of its own, the Stash Kit. I caught it while the Kit
+was still a design document and nothing public depended on the name, which is the
+cheapest that rename was ever going to be. A name that describes an artifact
+(bytes, messages, a manifest) tells you what doesn't belong. A name that
+describes a field invites everything in it.
 
 **A Kit says what it will not do.** Every Kit has a short list of things that
 are out of scope, written down on purpose. This matters more than the list of
