@@ -3,13 +3,13 @@ layout: post
 title: "What a Kit Is"
 # Alternate titles (3 to 8 words, no comma, no "and"): "The Kits Are Opening"; "Parts With Clear Edges"; "Building One Kit Twice".
 date: 2026-10-26
-published: false # DRAFT: remove this line when ready to publish
 categories: [slashbuilder, ai]
 tags: [slashbuilder, kits, beos, plan9, architecture, ai-assisted-development, series]
 excerpt: "Part 2: what I mean by a Kit, where the idea comes from, the rules every Kit follows, and an honest look at where the Kits stand today. The first ones are opening up."
 image: /images/what-a-kit-is.png
 author: Douglas Lockamy
 ai_assisted: true
+syndicate: true
 ---
 
 Last week I started a series about a project I've carried around for years: a
@@ -194,14 +194,10 @@ What I'm opening first:
 I'll open more Kits when each one is ready, and I'll say so here when I do. The
 set is still moving. I'm not going to pretend it's stable.
 
-<!-- GO-LIVE: before publishing, https://kits.slashbuilder.com must return 200 and serve the Kit Book, and slash-builder/kit-book must be public. If either is not true, delete the "Read the Kit Book" line below AND the Kit Book bullet above (see drafts/part-2-kit-book-notes.md, section C). Delete this comment before publishing. -->
-
 **Start with the Kit Book:** [kits.slashbuilder.com](https://kits.slashbuilder.com).
 The [Kit catalog](https://kits.slashbuilder.com/30-kits/) has every card, and
 [Start here](https://kits.slashbuilder.com/10-start-here.html) takes you from an
 empty folder to a running demo app.
-
-<!-- GO-LIVE: before publishing, https://github.com/slash-builder/app-context-kit must be public and return 200, its default branch must carry the public release (README titled "App Context Kit", with a Limits section and the BeOS lineage sentence), and the repository must be named app-context-kit, and its latest CI run on main must be green on Linux, macOS and Windows (the bullet above says so). If not, delete the "Read the App Context Kit" line below AND the repository bullet above (see drafts/part-2-kit-book-notes.md, section C). Delete this comment before publishing. -->
 
 **Read the App Context Kit:** [github.com/slash-builder/app-context-kit](https://github.com/slash-builder/app-context-kit)
 
