@@ -23,7 +23,7 @@ If you missed [Part 1](/posts/2026/10/19/where-an-os-idea-started/), here's the
 short version. Two old operating systems shaped how I think about building
 software. BeOS stayed fast and responsive under load, and it was organized as a
 set of Kits. Plan 9 treated everything as a file and tied machines together with
-one small protocol. Neither won, and both had ideas I never got over. The Kit is
+one small protocol. Neither won, but both had ideas I never got over. The Kit is
 the one this post is about.
 
 "Kit" is easy to say and easy to get wrong, so here's the plan. First, what I
