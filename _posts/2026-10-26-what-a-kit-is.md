@@ -95,6 +95,14 @@ Early on I locked one language rule: Rust for everything except the screen. The
 interface is Flutter, written in Dart, and everything underneath it is Rust,
 joined by a bridge. Storage, messaging and services all live on the Rust side.
 
+Why not one language for everything? Because the two halves want different
+things. The screen needs a toolkit that draws the same interface on a phone, a
+laptop and a device with a touchscreen from one codebase, and Flutter does that.
+The engine underneath needs to be fast, careful with memory, and usable well
+beyond a screen: in a server, a command-line tool, a small device. Rust fits
+that. One language doing both jobs would mean giving up one of those. I'd rather
+keep two and make the seam between them something I can test.
+
 That rule has a consequence for the Kits. An app has a Dart half and a Rust half,
 and both need the same answers to the same questions. So a Kit that apps touch
 directly has to exist in both languages and behave identically in each.
