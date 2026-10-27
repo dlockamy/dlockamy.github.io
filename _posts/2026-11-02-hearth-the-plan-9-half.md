@@ -11,9 +11,9 @@ social:
   linkedin: |-
     I'm not claiming a new idea. I'm claiming the old one still works.
 
-    Part 3 of my series on the platform I'm building with AI is about Hearth, a small open protocol that borrows the discipline of Plan 9's 9P and applies it to a household instead of a data center. Capability grants instead of accounts, and a thin wire contract instead of a platform.
+    Part 3 of my series on the platform I'm building with AI is about Hearth, a small open protocol that borrows the discipline of Plan 9's 9P and applies it to a household instead of a data center.
 
-    The post covers what Hearth takes from 9P, the two things it adds, and where it still falls short. The spec is public, so you can check every claim against it.
+    The post covers what Hearth takes from 9P, the two things it adds, and where it still falls short, including how much of the encryption is actually built. The spec is public, so you can check every claim against it.
 
     Drafted with AI assistance.
   bluesky: |-
@@ -31,13 +31,6 @@ social:
 author: Douglas Lockamy
 ai_assisted: true
 ---
-
-<!-- PROPOSED, DJ TO CONFIRM: optional opening that calls back to the Octopus demo in Part 1. Keep, rewrite or cut. It does not claim the demo runs on Hearth today. -->
-The demo that hooked me in Part 1 ended with a picture. One machine told another
-machine's webcam to take a photo, and the photo showed up as the front window on
-a third. That's a fair test for any protocol meant to connect the devices in a
-house, so I'll come back to it further down.
-<!-- END PROPOSED -->
 
 In [Part 1](/posts/2026/10/19/where-an-os-idea-started/) I said the idea came
 from two places. BeOS gave me the Kit: a system made of parts with clear edges,
@@ -93,7 +86,6 @@ The second is the handle. Multi-step conversations, like pairing a new device,
 use **a handle the server hands out** and carry it across the steps, rather than
 inventing a new message type per step. That borrows the shape of 9P's `walk`,
 but in real 9P the client picks the handle (the fid). In Hearth the server does.
-It's the move I find myself reaching for most.
 
 ## The two layers
 
@@ -113,18 +105,10 @@ nothing else. What gets sent is never translated on the way.
 
 The network leg is a WebSocket carrying one protobuf envelope per binary frame,
 with a 1 MiB cap per message. Anything bigger, like a file, deliberately never
-goes through the hub. The spec plans for files to move peer-to-peer or as
-references into content-addressed storage, in a later version. A hub that only
-relays small messages has much less to carry, and much less to lose.
-
-<!-- PROPOSED, DJ TO CONFIRM: the Octopus callback, paired with the opening above. Cut both or neither. -->
-That's where the Octopus demo comes back. Asking a camera to take a picture,
-and telling a third machine the picture is ready, are small messages, and those
-are exactly what the protocol is built to carry. The picture itself is a file,
-and moving files isn't in version 1. So Hearth's answer to that demo is half an
-answer for now, and the half it leaves out is the half it means to keep off the
-hub.
-<!-- END PROPOSED -->
+goes through the hub, the server every device connects to. The spec plans for
+files to move peer-to-peer or as references into content-addressed storage, in
+a later version. A hub that only relays small messages has much less to carry,
+and much less to lose.
 
 ## Where it falls short
 
@@ -142,18 +126,27 @@ you can check each one in the repository.
   corrected against running code, and it says plainly that the other sections
   have not been re-audited. Better a spec that admits that than one that looks
   finished.
+- **Encryption is only partly built.** By the repository's own status notes,
+  the first two levels are implemented: sealing a small piece of data to one
+  device, and encrypting content under a key the household shares.
+  Per-resource keys, and re-keying after a device is removed, are still only
+  written down. Some things encryption will never hide: the hub always sees who
+  published to which topic, when, and how much. The spec says that belongs in
+  public copy, not a footnote, so it's here.
 - **Some of it is still a design.** The spec lists what's deliberately not in
   version 1, including file transfer, federation between hubs and team topics.
   Each one has a later version number next to it.
 
 ## Why it belongs in this series
 
-The Kits are the parts, and Hearth is how the machines they run on find and
-talk to each other without anyone having to trust a platform. A Kit that carries
-messages between processes and a protocol that carries them between machines
-are meant to be the same shape on purpose. The dependency only runs one way.
-Hearth doesn't need the Kits; the Kit conforms to Hearth, not the other way
-round.
+In Part 1 I called Hearth the protocol that ties the Kits together, and last
+week I said the Kits need a way to talk to each other and to other machines.
+Both are true from the Kits' side. From Hearth's side, the dependency only runs
+one way: Hearth doesn't need the Kits. The Kit that carries messages between
+processes on one machine speaks Hearth's envelope, so a message leaving the
+machine is already in the shape the hub expects, and only the transport
+changes. The Kit conforms to Hearth, not the other way round, and the protocol
+is meant to work just as well for software that has never heard of a Kit.
 
 At some point I want to come back to the AI side of this and look at what
 building this way has actually cost, and what it's bought. Until then, the spec
