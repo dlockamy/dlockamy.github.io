@@ -127,10 +127,13 @@ you can check each one in the repository.
   have not been re-audited. Better a spec that admits that than one that looks
   finished.
 - **Encryption is only partly built.** By the repository's own status notes,
-  the first two levels are implemented: sealing a small piece of data to one
-  device, and encrypting content under a key the household shares.
-  Per-resource keys, and re-keying after a device is removed, are still only
-  written down. Some things encryption will never hide: the hub always sees who
+  two levels of client-side encryption are implemented in the reference code:
+  sealing a household's content key to each device on its roster, and
+  encrypting message content under that shared key. Sealing arbitrary data to
+  a single device, per-resource keys, and re-keying after a device is removed
+  are still only written down. In the reference app, chat messages are
+  encrypted this way and the app will not send without a key, but that key is
+  provisioned by hand and kept in ordinary app preferences. Some things encryption will never hide: the hub always sees who
   published to which topic, when, and how much. The spec says that belongs in
   public copy, not a footnote, so it's here.
 - **Some of it is still a design.** The spec lists what's deliberately not in
