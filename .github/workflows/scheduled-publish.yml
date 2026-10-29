@@ -1,0 +1,38 @@
+# Publish one armed pull request (the monorepo post) on its day, after Part 3 is live.
+# Merges the PR, rebuilds the site and starts the cross-post. See .github/scheduled-publish/.
+# Cancel: remove the 'scheduled-publish' label from the PR, or delete this workflow.
+name: Scheduled publish
+
+on:
+  schedule:
+    # 14:00 UTC is 09:00 US Eastern (standard time) on 5, 6 and 7 November. The 6th and 7th are retries
+    # for when Part 3 is not live yet; the script does nothing once the PR is merged.
+    - cron: "0 14 5-7 11 *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: read and report only"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+  pages: write
+
+concurrency: scheduled-publish
+
+jobs:
+  publish:
+    if: github.repository == 'dlockamy/dlockamy.github.io'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
+        run: .github/scheduled-publish/publish.sh
