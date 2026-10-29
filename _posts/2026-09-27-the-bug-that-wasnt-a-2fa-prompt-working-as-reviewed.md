@@ -5,6 +5,7 @@ date: 2026-09-27
 categories: [security, devops]
 tags: [keycloak, oidc, terraform, jenkins, grafana, 2fa, mfa, aws-ssm, security, verification]
 excerpt: "Jenkins was making me do password plus a one-time code every few minutes. A well-evidenced write-up traced it to a missing step in the Keycloak login flow and recommended adding it back. The diagnosis was correct and the fix was wrong: the missing step is deliberate, and a dated security-review comment sitting above the resource says why. The actual lever was a different knob entirely — one that controls how often the check fires rather than whether it can be skipped. Including the part of the bill that did get worse, which the commit message I wrote doesn't quite say."
+image: /images/the-bug-that-wasnt.png
 author: Douglas Lockamy
 ai_assisted: true
 ---

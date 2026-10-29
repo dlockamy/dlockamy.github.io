@@ -5,6 +5,7 @@ date: 2026-10-04
 categories: [devops, security]
 tags: [keycloak, aws, eventbridge, lambda, ecs, oidc, jenkins, cloudflare-pages, ollama, local-llm, verification, homelab]
 excerpt: "Keycloak was down for five days and seventeen hours this week, and the rule I'd built so that couldn't happen again fired zero times. Its pattern was right; the event never arrived. A session problem I blamed on a time limit was a refresh race. An analysis that said customers already get 30-day sessions was wrong in practice. A portal fix got merged into a deploy pipeline that hadn't deployed anything since September 8. A Jenkins restart showed three machines whose running state had drifted from their config. And twelve answers from four local models all blamed the same correct line of code. Each was found by reading the real thing instead of the description of it, and several aren't finished."
+image: /images/the-safety-net-that-never-fired.png
 author: Douglas Lockamy
 ai_assisted: true
 ---

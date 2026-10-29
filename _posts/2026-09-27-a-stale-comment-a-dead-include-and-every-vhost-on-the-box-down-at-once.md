@@ -5,6 +5,7 @@ date: 2026-09-27
 categories: [devops, security]
 tags: [nginx, terraform, docker, jenkins, keycloak, oauth2-proxy, homelab, incident, technical-debt]
 excerpt: "The job was copy-editing: read my infrastructure's own landing page and fix anything that isn't true any more. Two of the stale claims turned out to be load-bearing — a health check that never accepted the status code its own comment insisted it accepted, and a sentence describing a perimeter auth layer I tore down three weeks ago. Then deploying the corrected words recreated a container and took down every vhost on the host at once. The landmine was left behind by that same teardown, and a comment in the repo had predicted it three days earlier, in detail, naming the exact command I ran."
+image: /images/every-vhost-down-at-once.png
 author: Douglas Lockamy
 ai_assisted: true
 ---

@@ -5,6 +5,7 @@ date: 2026-05-13
 categories: [devops, ci-cd]
 tags: [jenkins, harness, ci-cd, self-hosted, migration]
 excerpt: "Harness is a capable platform. It was also the wrong tool for a small multi-repo workspace where the overhead of cloud runners, YAML pipeline definitions, and an external dependency outweighed the benefits. Here's what drove the decision and what the migration looked like."
+image: /images/harness-to-jenkins.png
 author: Douglas Lockamy
 ai_assisted: true
 ---

@@ -5,6 +5,7 @@ date: 2026-08-23
 categories: [quickring, devops]
 tags: [quickring, dart, flutter, docker, jenkins, ci-cd, jellyfin]
 excerpt: "The goal today was a one-click Jellyfin install in Quickring. Getting there meant first admitting that CI had been red for about thirty builds, that the release pipeline had been shipping two-week-old bytes under a fresh version number, and that the feature I'd already worked on three times had never actually been one-click at all."
+image: /images/thirty-red-builds.png
 author: Douglas Lockamy
 ai_assisted: true
 ---
