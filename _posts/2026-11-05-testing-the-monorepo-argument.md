@@ -8,6 +8,7 @@ tags: [monorepo, multi-repo, ci-cd, jenkins, experiments, ai-assisted-developmen
 excerpt: "I bet that a monorepo turns into an anti-pattern past a certain size. So I built the same system both ways, let AI developers work in each, and measured the process. My bet was half right, and the half that was wrong is the interesting part."
 author: Douglas Lockamy
 ai_assisted: true
+syndicate: true
 ---
 
 I've held an opinion about monorepos for years: they're great until they get big,
