@@ -9,11 +9,13 @@ image: /images/hearth-the-plan-9-half.png
 syndicate: true
 social:
   linkedin: |-
-    I'm not claiming a new idea. I'm claiming the old one still works.
+    Hearth, the protocol that ties my Kits together, has 24 message types in version 1. My goal is to stay under 30.
 
-    Part 3 of my series on the platform I'm building with AI is about Hearth, a small open protocol that borrows the discipline of Plan 9's 9P and applies it to a household instead of a data center.
+    I'm not claiming a new idea. I took the discipline from Plan 9's 9P, not its encoding, and applied it to a household instead of a data center.
 
-    The post covers what Hearth takes from 9P, the two things it adds, and where it still falls short, including how much of the encryption is actually built. The spec is public, so you can check every claim against it.
+    Part 3 of my series on the platform I'm building with AI covers what I borrowed, the two things I added, and where it falls short: the encryption is only partly built, and the post says exactly which parts. The spec is public, so you can check every claim against it.
+
+    Would you rather read a spec that looks finished, or one that lists its gaps? The write-up is in the link below.
 
     Drafted with AI assistance.
   bluesky: |-
