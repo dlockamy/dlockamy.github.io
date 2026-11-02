@@ -114,8 +114,10 @@ and much less to lose.
 
 ## Where it falls short
 
-Part 1 said I'd be specific about what broke. These are the rough edges, and
-you can check each one in the repository.
+Part 1 said I'd be specific about what broke. These are the rough edges. The
+spec and the repository's README let you check most of them; the reference
+hub and apps that the encryption claims describe aren't public yet, so for
+those you have the README's status notes and my word.
 
 - **It still carries the old name.** As of late October 2026, the spec is titled
   "Quickring Wire Protocol," the schema package is `quickring.v1`, and the
@@ -135,9 +137,10 @@ you can check each one in the repository.
   a single device, per-resource keys, and re-keying after a device is removed
   are still only written down. In the reference app, chat messages are
   encrypted this way and the app will not send without a key, but that key is
-  provisioned by hand and kept in ordinary app preferences. Some things encryption will never hide: the hub always sees who
-  published to which topic, when, and how much. The spec says that belongs in
-  public copy, not a footnote, so it's here.
+  provisioned by hand and kept in ordinary app preferences. Some things
+  encryption will never hide: the hub always sees who published to which
+  topic, when, and how much. The spec says that belongs in public copy, not a
+  footnote, so it's here.
 - **Some of it is still a design.** The spec lists what's deliberately not in
   version 1, including file transfer, federation between hubs and team topics.
   Each one has a later version number next to it.
