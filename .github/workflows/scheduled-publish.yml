@@ -1,13 +1,13 @@
-# Publish one armed pull request (the monorepo post) on its day, after Part 3 is live.
+# Publish one armed pull request (the ticket-scope post) on its day, after the monorepo post is live.
 # Merges the PR, rebuilds the site and starts the cross-post. See .github/scheduled-publish/.
 # Cancel: remove the 'scheduled-publish' label from the PR, or delete this workflow.
 name: Scheduled publish
 
 on:
   schedule:
-    # 14:00 UTC is 09:00 US Eastern (standard time) on 5, 6 and 7 November. The 6th and 7th are retries
-    # for when Part 3 is not live yet; the script does nothing once the PR is merged.
-    - cron: "0 14 5-7 11 *"
+    # 14:00 UTC is 09:00 US Eastern (standard time) on 9, 10 and 11 November. The 10th and 11th are retries
+    # for when the monorepo post is not live yet; the script does nothing once the PR is merged.
+    - cron: "0 14 9-11 11 *"
   workflow_dispatch:
     inputs:
       dry_run:
