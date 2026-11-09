@@ -572,8 +572,17 @@ a:hover { @include text-glow($teal); }
     blockquote {
       border-left: 2px solid $teal;
       padding-left: 1rem; margin: 1.25rem 0;
-      color: $muted; font-style: italic;
+      color: $body-text; font-style: italic;   // was $muted (4.1:1 on the page background); body colour keeps quotes readable
     }
+
+    // Lists and tables had no bottom margin, so the next paragraph sat directly under them,
+    // and table cells had no padding, so columns ran together.
+    ul, ol { margin-bottom: 1rem; }
+
+    table { border-collapse: collapse; margin: 1.25rem 0; width: 100%; }
+    th, td { text-align: left; vertical-align: top; padding: 0.35rem 1.25rem 0.35rem 0.25rem; line-height: 1.7; }
+    th { color: $teal-dim; font-weight: 700; border-bottom: 1px solid $border; }
+    td { border-bottom: 1px solid $border-dim; }
   }
 }
 
