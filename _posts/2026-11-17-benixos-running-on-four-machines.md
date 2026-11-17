@@ -28,7 +28,7 @@ Kits, and its machines talk over Hearth. It's the large OS project I kept pushin
 off.
 
 It is not a new Linux distribution, and it doesn't replace Docker. The first goal
-is deliberately plain: **you bring a stock Linux machine and Docker, run `docker
+is simple: **you bring a stock Linux machine and Docker, run `docker
 compose up`, and you have a BenixOS node.** Nothing to flash.
 
 ## Step one: a shared address book
@@ -46,7 +46,7 @@ a hypervisor host, the CI controller and an Android device. None of them can run
 a node yet. "Every machine" turned out to mean every Linux box that can safely
 carry one.
 
-That gap is the long game. BenixOS is meant to run on any host that meets a small
+Closing that gap is a long-term goal. BenixOS is meant to run on any host that meets a small
 contract, not on one blessed kind of machine. Ubuntu is what runs today. A light
 native host of my own boots headless, and macOS, Windows and phones are designs.
 
@@ -58,7 +58,7 @@ something, and it would pick a machine.
 | What I tried | What happened |
 |---|---|
 | Asked it to run a job on a different machine | It ran there, answered, and was cleaned up on release |
-| Five jobs asking for 1.5 CPUs each, across three machines | Spread 2, 2 and 1; a sixth was politely refused for not fitting |
+| Five jobs asking for 1.5 CPUs each, across three machines | Spread 2, 2 and 1; a sixth was refused for not fitting |
 | A machine declaring 2 CPUs, given quarter-CPU jobs | It took eight and refused the ninth |
 
 Under load, placing a job took 50 to 95 milliseconds at the median. The planner
@@ -107,7 +107,7 @@ internet, is planned but not built.
 AI agents built this over a weekend, working in parallel tracks, so I didn't take
 the result on faith. Before it went live, fresh AI reviewers went over the code
 four times. Each started from the code, not from the builders' notes, and wrote
-tests to break it. Every round found something real:
+tests to break it. Every round found a problem:
 
 - **Round 1** rejected a patch outright. A machine's routine status report broke
   the booking renewal of whoever held the job.
@@ -119,7 +119,7 @@ tests to break it. Every round found something real:
 - **Round 4** reviewed the final fixes. Nothing gets past the tunnel without a
   certificate and a token, and its advice was to keep it running.
 
-Round 4 came with a condition I want to be plain about. The cluster is safe today
+Round 4 came with a condition. The cluster is safe today
 because every machine's policy allows nothing. Once I allow a real job, it isn't
 safe as deployed.
 
@@ -132,8 +132,6 @@ with a separate Docker for the executor or by keeping CI away from Docker on tho
 machines.
 
 ## What broke along the way
-
-Here's the honest list.
 
 - **The builders hit usage limits twice.** Each time they sat idle until the limit
   reset, and about a day was lost to the two stops.
