@@ -6,7 +6,32 @@ categories: [slashbuilder, ai]
 tags: [slashbuilder, benixos, venue, kits, hearth, homelab, security, ai-assisted-development, series]
 excerpt: "I asked four ordinary machines in my lab to act like one computer. Each step showed a piece of what BenixOS is, how far it has come, and where it's going, including the parts that broke."
 image: /images/benixos-running-on-four-machines.png
-syndicate: false
+syndicate: true
+social:
+  linkedin: |-
+    I cut one machine's connection to my cluster's registry to see what would happen to the job it was running.
+
+    About a minute later the registry marked the machine "not ready." The job kept running until its lease ran out (the time it had been booked for), stopped just after, and did not start again when I restored the connection.
+
+    That last part is the one I care about. A job that keeps running after nobody is tracking it is a worse failure than a job that stops. So the rule is simple: if the controller disappears, work that's running finishes its lease and nothing new starts.
+
+    If you build anything that schedules work across machines, decide that rule before the first outage, not during it.
+
+    This came out of putting BenixOS, the distributed OS I've been building, on four machines in my lab. It isn't allowed to run anything real yet, and the write-up covers what four rounds of review found and why. It's in the link below.
+
+    Drafted with AI assistance.
+  bluesky: |-
+    I cut one machine's link to my cluster's registry mid-job. A minute later it was marked not ready. The job ran to the end of its lease, stopped just after, and didn't restart when the link came back. A job nobody is tracking is worse than one that stops.
+
+    Drafted with AI assistance.
+  mastodon: |-
+    I cut one machine's link to my cluster's registry. A minute later it was marked not ready. Its job ran to the end of its lease, stopped just after, and did not restart when the link came back.
+
+    A job that keeps running after nobody is tracking it is worse than one that stops. From putting BenixOS on four machines in my lab.
+
+    Drafted with AI assistance.
+
+    #homelab #DistributedSystems #Docker
 author: Douglas Lockamy
 ai_assisted: true
 ---

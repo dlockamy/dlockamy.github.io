@@ -1,0 +1,47 @@
+# Post the BenixOS update to LinkedIn, Bluesky and Mastodon on the morning of Tue 17 Nov 2026.
+# GitHub's cron is UTC and only runs from the default branch. 14:07 UTC is 09:07 US Eastern (standard time).
+# It does nothing but start the "Syndicate new posts" workflow for one post, which does the posting.
+# Cron fires every year on this date, so the run checks the date and exits on any other day.
+# Cancel: delete this workflow. Test: run it from the Actions tab (it defaults to a dry run, which posts nothing).
+name: Scheduled social post
+
+on:
+  schedule:
+    - cron: "7 14 17 11 *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: ask the syndicate workflow to show the posts and post nothing"
+        type: boolean
+        default: true
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency: scheduled-social
+
+jobs:
+  dispatch:
+    if: github.repository == 'dlockamy/dlockamy.github.io'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start the syndicate workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          DRY_INPUT: ${{ inputs.dry_run }}
+          POST: _posts/2026-11-16-benixos-running-on-four-machines.md
+          DAY: "2026-11-17"
+        run: |
+          if [ "$EVENT" = "schedule" ]; then
+            if [ "$(date -u +%F)" != "$DAY" ]; then
+              echo "Not $DAY (UTC); nothing to do."
+              exit 0
+            fi
+            dry=false
+          else
+            dry="$DRY_INPUT"
+          fi
+          echo "Dispatching syndicate for $POST (dry_run=$dry)"
+          gh workflow run syndicate.yml --repo "$GITHUB_REPOSITORY" -f post="$POST" -f dry_run="$dry"
