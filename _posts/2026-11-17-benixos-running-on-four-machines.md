@@ -4,7 +4,7 @@ title: "BenixOS Is Running on Four of My Machines. It Isn't Allowed to Do Anythi
 date: 2026-11-17
 categories: [slashbuilder, ai]
 tags: [slashbuilder, benixos, venue, kits, hearth, homelab, security, ai-assisted-development, series]
-excerpt: "I asked for a cluster by Monday and went out for a few hours. A progress update on BenixOS: four machines working together, four rounds of review that kept finding real problems, and a public book that says what exists and what doesn't."
+excerpt: "A progress update on BenixOS: four machines working together, four rounds of review that kept finding real problems, and a public book that says what exists and what doesn't."
 image: /images/benixos-running-on-four-machines.png
 syndicate: false
 author: Douglas Lockamy
@@ -28,16 +28,6 @@ meeting a small contract.
 It is not a new Linux distribution, and it doesn't replace Docker. The goal I
 set is deliberately plain: **you bring a stock Linux machine and Docker, run
 `docker compose up`, and you have a BenixOS node.** Nothing to flash.
-
-## The five-day version
-
-| When | What happened |
-|---|---|
-| 11 Nov | I set the goal above: it has to start from compose on stock Linux. |
-| 14 Nov | I asked for something slightly ridiculous: by the end of the weekend, every machine in my lab running it and sharing resources as one cluster. Then I went out for a few hours. |
-| 14 to 16 Nov | AI agents built it in parallel tracks. Four times, a fresh AI reviewer tried to break it. |
-| 15 to 16 Nov | A public book describing the design went live. |
-| 16 Nov | The cluster went live on four machines, and version 0.1.0 was tagged. |
 
 ## How it fits together
 
@@ -94,9 +84,10 @@ nothing renews a booking automatically yet.
 
 ## Why it's on a short leash
 
-Between the build and going live, fresh AI reviewers went over the code four
-times. Each started from the code, not from the builders' notes, and wrote tests
-to break it. Every round found something real:
+AI agents built this over a weekend, working in parallel tracks. Before it went
+live, fresh AI reviewers went over the code four times. Each started from the
+code, not from the builders' notes, and wrote tests to break it. Every round
+found something real:
 
 - **Round 1** rejected a patch outright. A machine's routine status report broke
   the booking renewal of whoever held the job.
@@ -123,7 +114,7 @@ or by keeping CI away from Docker on those machines.
 Here's the honest list.
 
 - **The builders hit usage limits twice.** Each time they sat idle until the limit
-  reset, and the weekend lost about a day to the two stops.
+  reset, and about a day was lost to the two stops.
 - **A hung test ran away.** One had been holding 18 GB of RAM and 61 CPU-hours on
   a build machine. Every test now runs under a timeout and a memory cap.
 - **CI rejected the first three tries at 0.1.0.** Its lint checks found problems
