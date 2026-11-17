@@ -11,10 +11,6 @@ author: Douglas Lockamy
 ai_assisted: true
 ---
 
-In [Part 1](/posts/2026/10/19/where-an-os-idea-started/) I promised to be
-specific about what the AI did, what I did, and what broke. This is the first
-post where that promise has a lot to work with.
-
 The last two parts covered the pieces:
 [the Kits](/posts/2026/10/26/what-a-kit-is/) and
 [Hearth](/posts/2026/11/02/hearth-the-plan-9-half/), the protocol that connects
@@ -128,7 +124,7 @@ or by keeping CI away from Docker on those machines.
 
 ## The part where things broke
 
-I did say I'd tell you what broke.
+Here's the honest list.
 
 - **The builders hit usage limits twice.** Each time they sat idle until the limit
   reset, and the weekend lost about a day to the two stops.
