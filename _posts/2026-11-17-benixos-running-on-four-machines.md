@@ -29,15 +29,11 @@ It is not a new Linux distribution, and it doesn't replace Docker. The goal I
 set is deliberately plain: **you bring a stock Linux machine and Docker, run
 `docker compose up`, and you have a BenixOS node.** Nothing to flash.
 
-I set that goal on 11 November, the day I decided to stop splitting my time
-between BenixOS and Quickring, the consumer product built on Hearth. For now, I'm
-doing only BenixOS.
-
 ## The five-day version
 
 | When | What happened |
 |---|---|
-| 11 Nov | The decision: BenixOS only, and it has to start from compose on stock Linux. |
+| 11 Nov | I set the goal above: it has to start from compose on stock Linux. |
 | 14 Nov | I asked for something slightly ridiculous: by the end of the weekend, every machine in my lab running it and sharing resources as one cluster. Then I went out for a few hours. |
 | 14 to 16 Nov | AI agents built it in parallel tracks. Four times, a fresh AI reviewer tried to break it. |
 | 15 to 16 Nov | A public book describing the design went live. |
