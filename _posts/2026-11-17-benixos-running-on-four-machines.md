@@ -131,25 +131,6 @@ on it. My lab didn't meet that. I have to fix it before anything real runs, eith
 with a separate Docker for the executor or by keeping CI away from Docker on those
 machines.
 
-## What broke along the way
-
-- **The builders hit usage limits twice.** Each time they sat idle until the limit
-  reset, and about a day was lost to the two stops.
-- **A hung test ran away.** One had been holding 18 GB of RAM and 61 CPU-hours on
-  a build machine. Every test now runs under a timeout and a memory cap.
-- **CI rejected the first three tries at 0.1.0.** Its lint checks found problems
-  in shell scripts that had never been through them before.
-- **CI can't build the images.** It needs to clone a private Kit repository, and
-  my organization's setting disables the deploy keys that would allow it. The
-  cluster runs images I built locally from the tagged release. Nothing is
-  published to a registry, and the twelve Venue Kit patches it depends on sit on
-  a branch that isn't merged anywhere.
-- **My CI agents can't move onto the cluster.** They compete with it for the same
-  machines, so I asked. Of 57 pipelines, 30 drive Docker and 11 build embedded
-  Linux images with huge caches. The executor forbids Docker access, mounts and
-  privileges by design, so the first real job will be something simpler than my
-  build system.
-
 ## Where this is going
 
 Each step above maps to a long-term goal. Here they are next to where things
@@ -178,8 +159,8 @@ waiting on my review.
 Next, I want one real thing running on it that I use every day, because that's the
 quickest way to find what's wrong. My candidate is a replacement for the notes app
 I'm writing this in, built from BenixOS's own pieces. That's a plan, and nothing
-exists yet. Before any real job is allowed, the shared Docker problem gets fixed,
-the policy needs real image digests, and the images need to build in CI.
+exists yet. Before any real job is allowed, the shared Docker problem gets fixed
+and the policy needs real image digests.
 
 Most of the cluster code is still private. The public parts are the book and the
 [Hearth spec](https://github.com/slash-builder/hearth), and either is a good place
