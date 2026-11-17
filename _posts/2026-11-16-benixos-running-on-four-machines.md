@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "BenixOS Is Running on Four of My Machines. It Isn't Allowed to Do Anything Yet."
-date: 2026-11-17
+date: 2026-11-16
 categories: [slashbuilder, ai]
 tags: [slashbuilder, benixos, venue, kits, hearth, homelab, security, ai-assisted-development, series]
 excerpt: "I asked four ordinary machines in my lab to act like one computer. Each step showed a piece of what BenixOS is, how far it has come, and where it's going, including the parts that broke."
