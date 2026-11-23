@@ -6,6 +6,26 @@ categories: [slashbuilder, ai]
 tags: [slashbuilder, benixos, distributed-os, homelab, casement, ai-assisted-development, series]
 excerpt: "This weekend BenixOS felt like it was getting somewhere: the first round of live UI work, with a taskbar launcher for native apps that run in their own windows. A short tour of Casement, the window shell, and the eleven apps on it."
 image: /images/benixos-has-a-window.png
+syndicate: true
+social:
+  linkedin: |-
+    This weekend was the first time BenixOS, the distributed operating system I'm building for your personal devices, felt like it's actually getting somewhere.
+
+    Lots of pieces have been getting built over the past few months. This weekend was the first round of live UI work, including a taskbar launcher for BenixOS native apps that run in their own windows.
+
+    The window shell is called Casement. An app doesn't draw anything itself. It describes what its screen should contain, and Casement draws it. Eleven apps run on it so far, from a calculator to a notes app. Screenshots and a short tour are in the post below.
+
+    Drafted with AI assistance.
+  bluesky: |-
+    This weekend BenixOS, the distributed OS I'm building for your personal devices, finally felt like it's getting somewhere: the first live UI work, with a taskbar launcher for native apps that each run in their own window. Short tour in the post. Drafted with AI assistance.
+  mastodon: |-
+    This weekend was the first time BenixOS, the distributed OS I'm building for your personal devices, felt like it's getting somewhere.
+
+    It's the first round of live UI work, with a taskbar launcher for native apps that each run in their own window. The window shell is called Casement, and eleven apps run on it so far.
+
+    Short tour and screenshots in the post. Drafted with AI assistance.
+
+    #BenixOS #OpenSource #Rust
 author: Douglas Lockamy
 ai_assisted: true
 ---
