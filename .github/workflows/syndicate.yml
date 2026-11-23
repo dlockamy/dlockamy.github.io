@@ -19,6 +19,10 @@ on:
         description: "Comma list: linkedin,bluesky,mastodon (blank = every platform)"
         required: false
         default: ""
+      variant:
+        description: "Optional: post the named social_variants: text (e.g. c) instead of the post's own social: text"
+        required: false
+        default: ""
       dry_run:
         description: "Dry run: show exactly what would be posted, post nothing"
         type: boolean
@@ -52,9 +56,10 @@ jobs:
           AFTER: ${{ github.sha }}
           POST: ${{ inputs.post }}
           PLATFORMS: ${{ inputs.platforms }}
+          VARIANT: ${{ inputs.variant }}
         run: |
           if [ "$EVENT" = "workflow_dispatch" ]; then
-            python .github/syndicate/syndicate.py detect --post "$POST" --platforms "$PLATFORMS"
+            python .github/syndicate/syndicate.py detect --post "$POST" --platforms "$PLATFORMS" --variant "$VARIANT"
           else
             python .github/syndicate/syndicate.py detect --before "$BEFORE" --after "$AFTER"
           fi
@@ -68,7 +73,7 @@ jobs:
       matrix: ${{ fromJSON(needs.detect.outputs.matrix) }}
     # Never two runs for the same post and platform at once.
     concurrency:
-      group: syndicate-${{ matrix.platform }}-${{ matrix.post }}
+      group: syndicate-${{ matrix.platform }}-${{ matrix.post }}-${{ matrix.variant }}
       cancel-in-progress: false
     name: ${{ matrix.platform }}, ${{ matrix.title }}
     steps:
@@ -92,8 +97,10 @@ jobs:
           SYNDICATE_DISCLOSE_AI: ${{ vars.SYNDICATE_DISCLOSE_AI }}
           POST: ${{ matrix.post }}
           PLATFORM: ${{ matrix.platform }}
+          VARIANT: ${{ matrix.variant }}
           DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
         run: |
           args=(--post "$POST" --platform "$PLATFORM" --wait-live 900)
+          if [ -n "$VARIANT" ]; then args+=(--variant "$VARIANT"); fi
           if [ "$DRY" = "true" ]; then args+=(--dry-run); fi
           python .github/syndicate/syndicate.py post "${args[@]}"

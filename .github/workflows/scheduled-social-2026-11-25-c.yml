@@ -1,0 +1,50 @@
+# Post C of the 16 Nov BenixOS article ("a reviewer who never saw the builders' reasoning") to LinkedIn, Bluesky and
+# Mastodon on the morning of Wed 25 Nov 2026. The text is the article's `social_variants: c:` block.
+# GitHub's cron is UTC and only runs from the default branch. 14:07 UTC is 09:07 US Eastern (standard time).
+# GitHub often runs a scheduled job hours late (the 17 Nov one ran about 8 hours after its time).
+# It does nothing but start the "Syndicate new posts" workflow for one post and variant, which does the posting.
+# Cron fires every year on this date, so the run checks the date and exits on any other day.
+# Cancel: delete this workflow. Test: run it from the Actions tab (it defaults to a dry run, which posts nothing).
+name: Scheduled social post (25 Nov, C)
+
+on:
+  schedule:
+    - cron: "7 14 25 11 *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: ask the syndicate workflow to show the posts and post nothing"
+        type: boolean
+        default: true
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency: scheduled-social-2026-11-25-c
+
+jobs:
+  dispatch:
+    if: github.repository == 'dlockamy/dlockamy.github.io'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start the syndicate workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          DRY_INPUT: ${{ inputs.dry_run }}
+          POST: _posts/2026-11-16-benixos-running-on-four-machines.md
+          VARIANT: c
+          DAY: "2026-11-25"
+        run: |
+          if [ "$EVENT" = "schedule" ]; then
+            if [ "$(date -u +%F)" != "$DAY" ]; then
+              echo "Not $DAY (UTC); nothing to do."
+              exit 0
+            fi
+            dry=false
+          else
+            dry="$DRY_INPUT"
+          fi
+          echo "Dispatching syndicate for $POST, variant $VARIANT (dry_run=$dry)"
+          gh workflow run syndicate.yml --repo "$GITHUB_REPOSITORY" -f post="$POST" -f variant="$VARIANT" -f dry_run="$dry"

@@ -32,6 +32,26 @@ social:
     Drafted with AI assistance.
 
     #homelab #DistributedSystems #Docker
+social_variants:
+  c:
+    linkedin: |-
+      Before I let anything run on my cluster, I had fresh AI reviewers attack the code four times. Each started from the code, not from the builders' notes, and wrote tests to break it.
+
+      Round 1 rejected a patch outright: a machine's routine status report broke the lease renewal of whoever held the job. Round 2 found that a machine that was enrolled but had never checked in could still be handed work, and that the check for a revoked credential could be fooled by a planted line in a log. Round 3 said it wasn't safe yet. Round 4 said keep it running, with a condition: it's safe only because every machine's policy allows nothing.
+
+      If AI agents write your code, a reviewer who has never seen their reasoning catches what the builders can't. What's the last thing a fresh pair of eyes caught in yours?
+
+      Drafted with AI assistance.
+    bluesky: |-
+      I had fresh AI reviewers attack my cluster code four times, each starting from the code and not the builders' notes. They found a patch that broke lease renewals, a machine that never checked in but could still be handed work, and a revoked-credential check fooled by a planted log line.
+
+      Drafted with AI assistance.
+    mastodon: |-
+      I had fresh AI reviewers attack my cluster code four times, each starting from the code, not the builders' notes. They found a patch that broke lease renewals, a machine that never checked in but could still be handed work, and a revoked-credential check that a planted log line could fool. Safe today only because every policy allows nothing.
+
+      Drafted with AI assistance.
+
+      #AI #security #homelab
 author: Douglas Lockamy
 ai_assisted: true
 ---

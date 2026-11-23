@@ -110,6 +110,7 @@ class Post:
     overrides: dict = field(default_factory=dict)
     url: str = ""
     image: str = ""  # absolute URL of the preview image, "" when the post sets none
+    variant: str = ""  # which `social_variants:` set of text this run posts; "" = the post's own `social:`
 
 
 _FM_RE = re.compile(r"\A---[ \t]*\r?\n(.*?)\r?\n---[ \t]*\r?\n?(.*)\Z", re.S)
@@ -154,7 +155,7 @@ def normalise_syndicate(value: Any) -> Optional[set]:
     return chosen or None
 
 
-def parse_post(path: str, text: Optional[str] = None) -> Post:
+def parse_post(path: str, text: Optional[str] = None, variant: str = "") -> Post:
     import yaml
 
     if text is None:
@@ -191,6 +192,20 @@ def parse_post(path: str, text: Optional[str] = None) -> Post:
         first = next((p for p in re.split(r"\n\s*\n", body) if _plain(p)), "")
         excerpt = _plain(first)
 
+    social = fm.get("social") or {}
+    if variant:
+        # A second set of wording for the same article (`social_variants: {c: {linkedin:, bluesky:, mastodon:}}`).
+        # It must be complete and must never fall back to the post's own text: a missing or partial variant would
+        # otherwise re-post the first set, or the auto-generated excerpt, under the wrong name.
+        variants = fm.get("social_variants") or {}
+        social = variants.get(variant) if isinstance(variants, dict) else None
+        if not isinstance(social, dict) or not social:
+            raise ValueError(f"{path}: no social_variants.{variant} in the front matter")
+        have = {ALIASES.get(k, k) for k, v in social.items() if str(v).strip()}
+        missing = [pl for pl in PLATFORMS if pl not in have]
+        if missing:
+            raise ValueError(f"{path}: social_variants.{variant} has no text for {', '.join(missing)}")
+
     image = str(fm.get("image") or "").strip()
     if image and not re.match(r"https?://", image, re.I):
         image = f"{SITE_URL}/{image.lstrip('/')}"  # Jekyll: absolute_url of a site-relative path
@@ -202,9 +217,10 @@ def parse_post(path: str, text: Optional[str] = None) -> Post:
         excerpt=excerpt,
         ai_assisted=bool(fm.get("ai_assisted")),
         syndicate=normalise_syndicate(fm.get("syndicate")),
-        overrides={ALIASES.get(k, k): str(v) for k, v in (fm.get("social") or {}).items()},
+        overrides={ALIASES.get(k, k): str(v) for k, v in social.items()},
         url=f"{SITE_URL}/posts/{date.year:04d}/{date.month:02d}/{date.day:02d}/{_slugify(fn.group(4))}/",
         image=image,
+        variant=variant,
     )
 
 
@@ -242,7 +258,8 @@ def _ai_note(p: Post) -> str:
 def link(p: Post, platform: str) -> str:
     """The post's URL tagged with where it was shared, so analytics can tell the platforms apart.
     The bare `p.url` stays the post's identity (wait-for-live, idempotency key); only what readers click is tagged."""
-    return f"{p.url}?utm_source={platform}&utm_medium=social"
+    tag = f"{p.url}?utm_source={platform}&utm_medium=social"
+    return f"{tag}&utm_content={p.variant}" if p.variant else tag
 
 
 def compose_linkedin(p: Post, author_urn: str = "urn:li:person:EXAMPLE", thumbnail: Optional[str] = None) -> dict:
@@ -590,7 +607,7 @@ def post_mastodon(p: Post, env, http, sleep=time.sleep) -> str:
             "Authorization": f"Bearer {env['MASTODON_ACCESS_TOKEN']}",
             # Mastodon ignores a repeat of the same key for about an hour, so re-running a job
             # cannot create a second copy of the same post.
-            "Idempotency-Key": hashlib.sha256(p.url.encode()).hexdigest(),
+            "Idempotency-Key": hashlib.sha256((p.url + (f"#{p.variant}" if p.variant else "")).encode()).hexdigest(),
         },
         json={"status": text, "visibility": visibility, "language": "en"},
     )
@@ -635,10 +652,10 @@ def added_posts(before: str, after: str, repo: str = ".") -> list:
     return sorted(files)
 
 
-def build_matrix(paths: list, repo: str = ".", platforms: Optional[set] = None, force: bool = False) -> dict:
+def build_matrix(paths: list, repo: str = ".", platforms: Optional[set] = None, force: bool = False, variant: str = "") -> dict:
     include = []
     for path in paths:
-        p = parse_post(str(Path(repo) / path))
+        p = parse_post(str(Path(repo) / path), variant=variant) if variant else parse_post(str(Path(repo) / path))
         p.path = path
         chosen = p.syndicate if p.syndicate is not None else (set(PLATFORMS) if force else None)
         if chosen is None:
@@ -647,7 +664,10 @@ def build_matrix(paths: list, repo: str = ".", platforms: Optional[set] = None, 
             chosen = chosen & platforms
         for plat in PLATFORMS:
             if plat in chosen:
-                include.append({"post": path, "platform": plat, "title": p.title})
+                row = {"post": path, "platform": plat, "title": p.title}
+                if variant:
+                    row["variant"] = variant
+                include.append(row)
     return {"include": include}
 
 
@@ -673,10 +693,14 @@ def summary(line: str) -> None:
 
 
 def cmd_detect(a) -> int:
+    variant = getattr(a, "variant", "") or ""
     if a.post:
         paths = [a.post]
         plats = {ALIASES.get(x.strip(), x.strip()) for x in a.platforms.split(",") if x.strip()} or None
-        matrix = build_matrix(paths, platforms=plats, force=True)
+        matrix = build_matrix(paths, platforms=plats, force=True, variant=variant)
+    elif variant:
+        print("--variant only applies to a manual run (--post)", file=sys.stderr)
+        return 2
     else:
         matrix = build_matrix(added_posts(a.before, a.after))
     any_ = bool(matrix["include"])
@@ -690,13 +714,14 @@ def cmd_detect(a) -> int:
 
 def cmd_post(a, env=None, http=None, sleep=time.sleep, clock=time.monotonic) -> int:
     env = os.environ if env is None else env
-    p = parse_post(a.post)
+    variant = getattr(a, "variant", "") or ""
+    p = parse_post(a.post, variant=variant) if variant else parse_post(a.post)
     platform = ALIASES.get(a.platform, a.platform)
     if platform not in PLATFORMS:
         print(f"unknown platform {a.platform!r}", file=sys.stderr)
         return 2
     if a.dry_run:
-        print(f"[dry run] {platform} <- {p.url}")
+        print(f"[dry run] {platform} <- {p.url}" + (f" (variant {variant})" if variant else ""))
         print(f"[dry run] card image: {p.image or 'none (text-only card)'}")
         print(json.dumps(_preview_payload(p, platform), indent=2, ensure_ascii=False))
         summary(f"- {platform}: dry run, nothing posted ({p.title})")
@@ -735,7 +760,8 @@ def _preview_payload(p: Post, platform: str) -> dict:
 
 
 def cmd_preview(a) -> int:
-    p = parse_post(a.post)
+    variant = getattr(a, "variant", "") or ""
+    p = parse_post(a.post, variant=variant) if variant else parse_post(a.post)
     print(f"{p.title}\n{p.url}\nopted in: {sorted(p.syndicate) if p.syndicate else 'NO (no syndicate: key)'}\n")
     li = compose_linkedin(p)
     print(f"--- LinkedIn commentary ({len(li['commentary'])}/{LINKEDIN_COMMENTARY_MAX})\n{li['commentary']}")
@@ -832,13 +858,16 @@ def main(argv=None) -> int:
     d.add_argument("--after", default="HEAD")
     d.add_argument("--post", help="explicit post path (manual run); bypasses 'added in this push'")
     d.add_argument("--platforms", default="", help="comma list for a manual run (blank = every platform)")
+    d.add_argument("--variant", default="", help="post the named `social_variants:` text instead of `social:` (manual run only)")
     po = sub.add_parser("post")
     po.add_argument("--post", required=True)
     po.add_argument("--platform", required=True)
     po.add_argument("--dry-run", action="store_true")
     po.add_argument("--wait-live", type=int, default=0, metavar="SECONDS")
+    po.add_argument("--variant", default="", help="post the named `social_variants:` text instead of `social:`")
     pr = sub.add_parser("preview")
     pr.add_argument("--post", required=True)
+    pr.add_argument("--variant", default="", help="preview the named `social_variants:` text")
     ck = sub.add_parser("check-tokens")
     ck.add_argument("--warn-days", type=int, default=14)
     ck.add_argument("--report", help="write the problems to this file")

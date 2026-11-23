@@ -805,5 +805,89 @@ class BlueskyImageTests(unittest.TestCase):
         self.assertEqual(len(http.calls), 2)
 
 
+class VariantTests(unittest.TestCase):
+    """`social_variants:` carries a second set of wording for one article (Post C of the 16 Nov article)."""
+
+    EXTRA = (
+        "syndicate: true\n"
+        "social:\n  linkedin: \"base li\"\n  bluesky: \"base bsky\"\n  mastodon: \"base masto\"\n"
+        "social_variants:\n"
+        "  c:\n    linkedin: \"c li\"\n    bluesky: \"c bsky\"\n    mastodon: \"c masto\"\n"
+        "  partial:\n    linkedin: \"only li\"\n"
+        "  blank:\n    linkedin: \"li\"\n    bluesky: \"bs\"\n    mastodon: \"   \"\n"
+    )
+    FM = ('---\nlayout: post\ntitle: "A post"\ndate: 2026-10-05\nexcerpt: "An excerpt."\n'
+          'ai_assisted: true\n' + EXTRA + '---\n\nBody.\n')
+
+    def load(self, variant=""):
+        return _REAL_PARSE_POST("_posts/2026-10-05-a-test-post.md", text=self.FM, variant=variant)
+
+    def test_the_variant_text_is_used_and_the_posts_own_text_is_untouched(self):
+        self.assertEqual(self.load("c").overrides, {"linkedin": "c li", "bluesky": "c bsky", "mastodon": "c masto"})
+        self.assertEqual(self.load().overrides, {"linkedin": "base li", "bluesky": "base bsky", "mastodon": "base masto"})
+        self.assertEqual(s.compose_bluesky_text(self.load("c")), "c bsky")
+        self.assertEqual(s.compose_bluesky_text(self.load()), "base bsky")
+
+    def test_an_unknown_variant_fails_instead_of_falling_back(self):
+        with self.assertRaisesRegex(ValueError, "no social_variants.zzz"):
+            self.load("zzz")
+
+    def test_a_partial_or_blank_variant_fails_so_no_platform_gets_the_wrong_text(self):
+        with self.assertRaisesRegex(ValueError, "no text for bluesky, mastodon"):
+            self.load("partial")
+        with self.assertRaisesRegex(ValueError, "no text for mastodon"):
+            self.load("blank")
+
+    def test_a_post_with_no_variants_at_all_fails_for_any_variant(self):
+        text = "---\nlayout: post\ntitle: \"A\"\ndate: 2026-10-05\nsyndicate: true\n---\nBody.\n"
+        with self.assertRaisesRegex(ValueError, "no social_variants.c"):
+            _REAL_PARSE_POST("_posts/2026-10-05-a-test-post.md", text=text, variant="c")
+
+    def test_the_link_is_tagged_with_the_variant_only_when_there_is_one(self):
+        self.assertTrue(s.link(self.load("c"), "linkedin").endswith("?utm_source=linkedin&utm_medium=social&utm_content=c"))
+        self.assertNotIn("utm_content", s.link(self.load(), "linkedin"))
+
+    def test_the_mastodon_idempotency_key_differs_between_the_post_and_its_variant(self):
+        env = {"MASTODON_INSTANCE": "hachyderm.io", "MASTODON_ACCESS_TOKEN": "t"}
+        instance_ok = Resp(200, {"configuration": {"statuses": {"max_characters": 500, "characters_reserved_per_url": 23}}})
+
+        def key(p):
+            http = FakeHttp(instance_ok, Resp(200, {"id": "1"}))
+            s.post_mastodon(p, env, http, sleep=lambda *_: None)
+            return http.calls[1][2]["headers"]["Idempotency-Key"]
+        self.assertEqual(key(self.load("c")), key(self.load("c")))
+        self.assertNotEqual(key(self.load("c")), key(self.load()))
+
+    def test_the_matrix_carries_the_variant_only_for_a_variant_run(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "_posts").mkdir()
+            (Path(d) / "_posts" / "2026-10-05-a-test-post.md").write_text(self.FM)
+            plain = s.build_matrix(["_posts/2026-10-05-a-test-post.md"], repo=d, force=True)
+            var = s.build_matrix(["_posts/2026-10-05-a-test-post.md"], repo=d, force=True, variant="c")
+            self.assertTrue(all("variant" not in row for row in plain["include"]))
+            self.assertEqual({row["variant"] for row in var["include"]}, {"c"})
+            self.assertEqual(sorted(row["platform"] for row in var["include"]), ["bluesky", "linkedin", "mastodon"])
+
+    def test_detect_refuses_a_variant_on_a_push(self):
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+            rc = s.cmd_detect(Namespace(before="", after="HEAD", post="", platforms="", variant="c"))
+        self.assertEqual(rc, 2)
+        self.assertIn("manual run", err.getvalue())
+
+    def test_a_dry_run_shows_the_variant_text_and_touches_no_network(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "2026-10-05-a-test-post.md"
+            path.write_text(self.FM)
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                rc = s.cmd_post(Namespace(post=str(path), platform="bluesky", dry_run=True, wait_live=0, variant="c"),
+                                env={}, http=FakeHttp())
+            self.assertEqual(rc, 0)
+            self.assertIn("(variant c)", out.getvalue())
+            self.assertIn("c bsky", out.getvalue())
+            self.assertNotIn("base bsky", out.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()
