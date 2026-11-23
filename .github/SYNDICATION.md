@@ -42,6 +42,25 @@ image: /images/my-post.png           # 1200x630 PNG or JPEG, kept under images/
   nothing was created), it retries once without it.
 - `syndicate.py preview` prints the image it found, or says there is none.
 
+## A second set of text for the same article
+
+A post can carry more than one set of wording, for a follow-up that stands on its own. Put it beside `social:`:
+
+```yaml
+social_variants:
+  c:                       # the name you pass as the variant
+    linkedin: "..."
+    bluesky: "..."
+    mastodon: "..."
+```
+
+- A variant is only ever posted on purpose: **Syndicate new posts → Run workflow**, with `variant: c` (or a scheduled
+  workflow that passes `-f variant=c`). A push never uses one.
+- It must have text for **all three platforms**. A missing variant, or one missing a platform, is an error. It never
+  falls back to the post's own `social:` text, so it cannot re-post the first set.
+- The shared link carries `&utm_content=<variant>` as well, so a variant's clicks can be told apart from the first post's.
+- Preview: `syndicate.py preview --post _posts/<file>.md --variant c`.
+
 Only **new** files in `_posts/` trigger it. Editing an old post never re-posts it.
 If a post has `ai_assisted: true`, each platform's text ends with "Drafted with AI assistance."
 To drop that line, set the repository variable `SYNDICATE_DISCLOSE_AI` to `0`.
