@@ -52,6 +52,30 @@ social_variants:
       Drafted with AI assistance.
 
       #AI #security #homelab
+  b:
+    # Post B (2026-11-24 decision): LinkedIn is posted BY HAND with the link in the body and no card, so the
+    # linkedin text here exists only because a variant must be complete. Run the workflow with
+    # platforms=bluesky,mastodon for this variant; do not run it for linkedin (it would add a card).
+    linkedin: |-
+      In the cluster I just built, the registry decides where a job can run. It does not decide whether the job is allowed to.
+
+      Each machine runs its own executor, the only program there that can touch Docker, and it starts a container only if a local policy says so. I checked it: a request with no token was refused, and a machine's own token couldn't place work either.
+
+      The split matters because a compromised registry can ask for bad work but can't make a machine do it. Right now every policy allows nothing, and that's why the cluster is safe. The long-term version is rules the owner signs and each machine checks on its own, without asking anyone. That part is designed, not built.
+
+      If you run a scheduler, check whether the thing that decides where work goes can also decide that the work is allowed. If it can, one compromise gets you both. Does yours keep the two apart?
+
+      Drafted with AI assistance.
+    bluesky: |-
+      The registry in my cluster decides where a job can run, not whether it's allowed. Each machine checks its own policy and refuses anything not on its list, so a compromised scheduler can ask for bad work but can't make a machine do it. Today the list is empty.
+
+      Drafted with AI assistance.
+    mastodon: |-
+      In my cluster the registry decides where a job can run, but each machine decides whether it's allowed. A request with no token was refused, and a machine's own token couldn't place work. A compromised registry can ask for bad work; it can't make a machine do it. Today every machine's policy allows nothing.
+
+      Drafted with AI assistance.
+
+      #homelab #security #DistributedSystems
 author: Douglas Lockamy
 ai_assisted: true
 ---
