@@ -52,6 +52,30 @@ social_variants:
       Drafted with AI assistance.
 
       #AI #security #homelab
+  b:
+    # Post B (2026-11-24 decision). LinkedIn is posted BY HAND with the link in the body and no card; the
+    # linkedin text below exists only because a variant must be complete. DO NOT run this variant for
+    # linkedin (it would post a card): run the workflow with platforms=bluesky,mastodon.
+    linkedin: |-
+      In the cluster I put together in my lab, the registry decides where a job can run. It does not decide whether the job is allowed to.
+
+      Each machine runs its own executor, the only program allowed to touch Docker there, and it starts a container only if a local policy says so. I tested the registry's side: a request with no token was refused, and a machine's own token couldn't place work either.
+
+      The design goal is that a compromised registry can ask for bad work but can't make a machine do it. As of my last run every policy allows nothing, and that's what keeps it safe for now. The long-term version is rules the owner signs and each machine checks on its own, without asking anyone. That part is designed, not built.
+
+      If you run a scheduler, check whether the thing that decides where work goes can also decide that the work is allowed. If it can, one compromise gets you both. Does yours keep the two apart?
+
+      Drafted with AI assistance.
+    bluesky: |-
+      In my lab cluster the registry decides where a job can run, not whether it's allowed. Each machine checks its own policy and refuses anything not on its list. The design goal: a compromised scheduler can ask for bad work but can't make a machine do it. As of my last run the list is empty.
+
+      Drafted with AI assistance.
+    mastodon: |-
+      In my lab cluster the registry decides where a job can run, but each machine decides whether it's allowed. A request with no token was refused, and a machine's own token couldn't place work. The design goal is that a compromised registry can ask for bad work but can't make a machine do it. As of my last run every machine's policy allows nothing.
+
+      Drafted with AI assistance.
+
+      #homelab #security #DistributedSystems
 author: Douglas Lockamy
 ai_assisted: true
 ---
